@@ -15,7 +15,8 @@ export const GAME_STATE = {
 
 function initLevel(levelDef) {
   const conduits = levelDef.conduits.map(c => ({ ...c }));
-  const grid = buildGrid(levelDef.cols, levelDef.rows, conduits, levelDef.deadZones);
+  const deadZones = levelDef.deadZones || [];
+  const grid = buildGrid(levelDef.cols, levelDef.rows, conduits, deadZones);
   return {
     levelDef,
     cols: levelDef.cols,
@@ -23,7 +24,7 @@ function initLevel(levelDef) {
     grid,
     conduits,
     exits: levelDef.exits.map(e => ({ ...e, satisfied: false })),
-    deadZones: levelDef.deadZones || [],
+    deadZones,
     movesUsed: 0,
     maxMoves: levelDef.maxMoves,
     targetMoves: levelDef.targetMoves,
@@ -32,7 +33,6 @@ function initLevel(levelDef) {
     selectedConduitId: null,
     gameState: GAME_STATE.IDLE,
     animatingRobotId: null,
-    exitingConduitId: null,
     nudgeConduitId: null,
     stars: 0,
     history: [],
@@ -42,22 +42,21 @@ function initLevel(levelDef) {
 export const useGameStore = create((set, get) => ({
   currentLevelIndex: 0,
   unlockedLevels: 1,
-  levelStars: {},    // { levelId: stars }
+  levelStars: {},
   ...initLevel(LEVELS[0]),
 
   // ── Load a level ──────────────────────────────────────────────────────────
   loadLevel(index) {
     const levelDef = LEVELS[index];
-    set({ currentLevelIndex: index, ...initLevel(levelDef) });
+    const { unlockedLevels, levelStars } = get();
+    set({ currentLevelIndex: index, unlockedLevels, levelStars, ...initLevel(levelDef) });
   },
 
   // ── Select / deselect conduit ────────────────────────────────────────────
   selectConduit(id) {
     const { gameState } = get();
     if (gameState !== GAME_STATE.IDLE) return;
-    set(s => ({
-      selectedConduitId: s.selectedConduitId === id ? null : id,
-    }));
+    set(s => ({ selectedConduitId: s.selectedConduitId === id ? null : id }));
   },
 
   // ── Attempt move ──────────────────────────────────────────────────────────
@@ -79,8 +78,8 @@ export const useGameStore = create((set, get) => ({
       conduit, dir, s.grid, s.cols, s.rows, s.exits
     );
 
+    // Nothing moves at all
     if (steps === 0 && !exitsAt) {
-      // Blocked — nudge animation
       set({ nudgeConduitId: conduitId });
       setTimeout(() => set({ nudgeConduitId: null }), 400);
       return;
@@ -95,15 +94,25 @@ export const useGameStore = create((set, get) => ({
       satisfiedCount: s.satisfiedCount,
     };
 
-    // Start move animation
     set({ gameState: GAME_STATE.MOVING, selectedConduitId: conduitId });
 
-    // After animation delay, apply state
     setTimeout(() => {
       const curr = get();
+
       if (exitsAt) {
-        // Conduit exits the grid
-        const newGrid = removeConduit(conduit, curr.grid);
+        // ── EXIT CASE ────────────────────────────────────────────────────
+        // Slide to edge first (steps - 1 = distance inside grid), then remove
+        const slideSteps = steps - 1;
+        let finalGrid = curr.grid;
+
+        if (slideSteps > 0) {
+          const { grid: movedGrid } = moveConduit(conduit, slideSteps, dir, curr.grid);
+          finalGrid = movedGrid;
+        }
+
+        // Now remove the conduit entirely
+        const newGrid = removeConduit(conduit, finalGrid);
+        // Also clear any cells the conduit moved through (safety)
         const newConduits = curr.conduits.filter(c => c.id !== conduitId);
         const newExits = curr.exits.map(e =>
           e.id === exitsAt.id ? { ...e, satisfied: true } : e
@@ -117,14 +126,13 @@ export const useGameStore = create((set, get) => ({
           exits: newExits,
           satisfiedCount: newSatisfied,
           movesUsed: newMoves,
-          exitingConduitId: null,
           gameState: GAME_STATE.REACTIVE_ANIMATION,
           animatingRobotId: exitsAt.id,
           history: [...curr.history, snapshot],
           selectedConduitId: null,
         });
 
-        // After robot animation, check win
+        // After robot boot animation, check win condition
         setTimeout(() => {
           const afterAnim = get();
           if (isLevelComplete(afterAnim.satisfiedCount, afterAnim.totalBots)) {
@@ -152,32 +160,23 @@ export const useGameStore = create((set, get) => ({
         }, 900);
 
       } else {
-        // Normal slide
-        const { conduit: moved, grid: newGrid } = moveConduit(
-          conduit, steps, dir, curr.grid
-        );
-        const newConduits = curr.conduits.map(c =>
-          c.id === conduitId ? moved : c
-        );
+        // ── NORMAL SLIDE ────────────────────────────────────────────────
+        const { conduit: moved, grid: newGrid } = moveConduit(conduit, steps, dir, curr.grid);
+        const newConduits = curr.conduits.map(c => c.id === conduitId ? moved : c);
         const newMoves = curr.movesUsed + 1;
+        const newHistory = [...curr.history, snapshot];
 
         if (newMoves >= curr.maxMoves && curr.satisfiedCount < curr.totalBots) {
           set({
-            grid: newGrid,
-            conduits: newConduits,
-            movesUsed: newMoves,
-            gameState: GAME_STATE.GAME_OVER,
-            history: [...curr.history, snapshot],
-            selectedConduitId: null,
+            grid: newGrid, conduits: newConduits,
+            movesUsed: newMoves, gameState: GAME_STATE.GAME_OVER,
+            history: newHistory, selectedConduitId: null,
           });
         } else {
           set({
-            grid: newGrid,
-            conduits: newConduits,
-            movesUsed: newMoves,
-            gameState: GAME_STATE.IDLE,
-            history: [...curr.history, snapshot],
-            selectedConduitId: null,
+            grid: newGrid, conduits: newConduits,
+            movesUsed: newMoves, gameState: GAME_STATE.IDLE,
+            history: newHistory, selectedConduitId: null,
           });
         }
       }
@@ -200,14 +199,12 @@ export const useGameStore = create((set, get) => ({
     });
   },
 
-  // ── Restart current level ─────────────────────────────────────────────────
+  // ── Restart current level ────────────────────────────────────────────────
   restart() {
     const { currentLevelIndex, unlockedLevels, levelStars } = get();
     set({
       ...initLevel(LEVELS[currentLevelIndex]),
-      unlockedLevels,
-      levelStars,
-      currentLevelIndex,
+      unlockedLevels, levelStars, currentLevelIndex,
     });
   },
 
@@ -218,9 +215,7 @@ export const useGameStore = create((set, get) => ({
     if (next >= LEVELS.length) return;
     set({
       ...initLevel(LEVELS[next]),
-      currentLevelIndex: next,
-      unlockedLevels,
-      levelStars,
+      currentLevelIndex: next, unlockedLevels, levelStars,
     });
   },
 }));

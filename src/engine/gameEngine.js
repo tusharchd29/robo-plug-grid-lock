@@ -1,28 +1,10 @@
 // ─── GAME ENGINE ────────────────────────────────────────────────────────────
 // Pure functions — no side effects, no React, no state.
-// All movement math and collision detection lives here.
 
 export const CELL = { EMPTY: 0, DEAD: 'X' };
 export const DIR  = { UP: 'UP', DOWN: 'DOWN', LEFT: 'LEFT', RIGHT: 'RIGHT' };
 
-// Build a fresh grid from a level definition
-export function buildGrid(cols, rows, conduits, deadZones = []) {
-  const grid = Array.from({ length: rows }, () => Array(cols).fill(CELL.EMPTY));
-
-  deadZones.forEach(([r, c]) => {
-    grid[r][c] = CELL.DEAD;
-  });
-
-  conduits.forEach(conduit => {
-    conduit.cells.forEach(([r, c]) => {
-      grid[r][c] = conduit.id;
-    });
-  });
-
-  return grid;
-}
-
-// Return occupied cells for a conduit given its current head position
+// Return occupied cells for a conduit given its head position
 export function getConduitCells(conduit) {
   const { headRow, headCol, length, axis } = conduit;
   const cells = [];
@@ -33,12 +15,30 @@ export function getConduitCells(conduit) {
   return cells;
 }
 
-// Given a direction, return how the head moves (+1 or -1 per step)
+// Build a fresh grid from a level definition
+export function buildGrid(cols, rows, conduits, deadZones = []) {
+  const grid = Array.from({ length: rows }, () => Array(cols).fill(CELL.EMPTY));
+
+  deadZones.forEach(([r, c]) => {
+    if (r >= 0 && r < rows && c >= 0 && c < cols) grid[r][c] = CELL.DEAD;
+  });
+
+  conduits.forEach(conduit => {
+    getConduitCells(conduit).forEach(([r, c]) => {
+      if (r >= 0 && r < rows && c >= 0 && c < cols) grid[r][c] = conduit.id;
+    });
+  });
+
+  return grid;
+}
+
+// Direction delta
 function dirDelta(dir) {
   if (dir === DIR.RIGHT) return { dr: 0, dc: 1 };
   if (dir === DIR.LEFT)  return { dr: 0, dc: -1 };
   if (dir === DIR.DOWN)  return { dr: 1, dc: 0 };
   if (dir === DIR.UP)    return { dr: -1, dc: 0 };
+  return { dr: 0, dc: 0 };
 }
 
 // Check axis compatibility
@@ -47,42 +47,38 @@ export function canMoveInDir(conduit, dir) {
   return dir === DIR.UP || dir === DIR.DOWN;
 }
 
-// Compute how many steps a conduit can slide in a direction before hitting
-// another conduit, a dead zone, or the grid boundary (exclusive of exits)
+// Compute how many steps a conduit can slide.
+// Exits live just outside the grid boundary (row=-1, row=rows, col=-1, col=cols).
+// Returns { steps, exitsAt } — exitsAt is the exit object or null.
 export function calcMaxSteps(conduit, dir, grid, cols, rows, exits) {
-  if (!canMoveInDir(conduit, dir)) return 0;
+  if (!canMoveInDir(conduit, dir)) return { steps: 0, exitsAt: null };
 
   const { dr, dc } = dirDelta(dir);
   const cells = getConduitCells(conduit);
 
-  // Leading edge cells (the cells in the direction of travel)
-  const leading = dir === DIR.RIGHT || dir === DIR.DOWN
-    ? [cells[cells.length - 1]]
-    : [cells[0]];
+  // Leading edge cell (front in direction of travel)
+  const leadCell = (dir === DIR.RIGHT || dir === DIR.DOWN)
+    ? cells[cells.length - 1]
+    : cells[0];
 
   let steps = 0;
+
   while (true) {
-    const nextR = leading[0][0] + dr * (steps + 1);
-    const nextC = leading[0][1] + dc * (steps + 1);
+    const nextR = leadCell[0] + dr * (steps + 1);
+    const nextC = leadCell[1] + dc * (steps + 1);
 
-    // Check if we're stepping onto an exit terminal
-    const exitHere = exits.find(e => e.row === nextR && e.col === nextC);
-    if (exitHere) {
-      // Can exit only if it's aligned with this conduit's color
-      if (exitHere.color === conduit.color) {
-        steps++;
-        return { steps, exitsAt: exitHere };
-      }
-      // Wrong color exit — blocks movement
+    const outOfBounds = nextR < 0 || nextR >= rows || nextC < 0 || nextC >= cols;
+
+    if (outOfBounds) {
+      // Is there a matching unsatisfied exit just beyond this edge?
+      const exitHere = exits.find(e =>
+        !e.satisfied && e.row === nextR && e.col === nextC && e.color === conduit.color
+      );
+      if (exitHere) return { steps: steps + 1, exitsAt: exitHere };
       return { steps, exitsAt: null };
     }
 
-    // Out of bounds = wall (no exit here)
-    if (nextR < 0 || nextR >= rows || nextC < 0 || nextC >= cols) {
-      return { steps, exitsAt: null };
-    }
-
-    // Check grid cell
+    // Inside grid — check for blocker
     const cell = grid[nextR][nextC];
     if (cell !== CELL.EMPTY) return { steps, exitsAt: null };
 
@@ -99,7 +95,8 @@ export function moveConduit(conduit, steps, dir, grid) {
 
   // Clear old cells
   getConduitCells(conduit).forEach(([r, c]) => {
-    newGrid[r][c] = CELL.EMPTY;
+    if (r >= 0 && r < newGrid.length && c >= 0 && c < newGrid[0].length)
+      newGrid[r][c] = CELL.EMPTY;
   });
 
   const newConduit = {
@@ -110,7 +107,8 @@ export function moveConduit(conduit, steps, dir, grid) {
 
   // Write new cells
   getConduitCells(newConduit).forEach(([r, c]) => {
-    newGrid[r][c] = newConduit.id;
+    if (r >= 0 && r < newGrid.length && c >= 0 && c < newGrid[0].length)
+      newGrid[r][c] = newConduit.id;
   });
 
   return { conduit: newConduit, grid: newGrid };
@@ -128,8 +126,8 @@ export function removeConduit(conduit, grid) {
 
 // Compute star rating
 export function calcStars(movesUsed, targetMoves) {
-  if (movesUsed <= targetMoves)         return 3;
-  if (movesUsed <= targetMoves + 3)     return 2;
+  if (movesUsed <= targetMoves)     return 3;
+  if (movesUsed <= targetMoves + 3) return 2;
   return 1;
 }
 
