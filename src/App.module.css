@@ -1,88 +1,98 @@
 .root {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: #f0ecff;
   position: relative;
   overflow: hidden;
 }
 
-.blob { position: absolute; z-index: 0; pointer-events: none; }
-.blob1 { width:320px;height:320px;background:#ffd6f0;top:-80px;left:-80px;border-radius:60% 40% 55% 45%;opacity:0.5; }
-.blob2 { width:260px;height:260px;background:#d6f0ff;bottom:20px;right:-50px;border-radius:45% 55% 40% 60%;opacity:0.5; }
-.blob3 { width:160px;height:160px;background:#d6ffd6;top:45%;left:2%;border-radius:50%;opacity:0.4; }
+/* ── Blobs ──────────────────────────────────── */
+.blob { position:absolute; z-index:0; pointer-events:none; }
+.blob1 { width:280px;height:280px;background:#ffd6f0;top:-70px;left:-70px;border-radius:60% 40% 55% 45%;opacity:0.5; }
+.blob2 { width:220px;height:220px;background:#d6f0ff;bottom:10px;right:-40px;border-radius:45% 55% 40% 60%;opacity:0.5; }
+.blob3 { width:150px;height:150px;background:#d6ffd6;top:45%;left:2%;border-radius:50%;opacity:0.4; }
 
-/* ── Top bar ─────────────────────────────────────────────── */
+/* ── Game layout ────────────────────────────── */
 .gameLayout {
-  position: relative; z-index: 1;
+  position: relative; z-index:1;
   display: flex; flex-direction: column;
-  height: 100vh; overflow: hidden;
+  height: 100vh; height: 100dvh;
+  overflow: hidden;
 }
 
+/* ── Top bar ────────────────────────────────── */
 .topBar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 16px 6px; flex-shrink: 0;
+  padding: 8px 14px 4px; flex-shrink: 0;
 }
 .backBtn {
-  background: rgba(255,255,255,0.75);
-  border: 1.5px solid rgba(160,120,255,0.22);
-  border-radius: 20px; padding: 5px 14px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 12px; font-weight: 700; color: #7c5cbf; cursor: pointer;
-  transition: background 0.15s;
+  background:rgba(255,255,255,0.78);
+  border:1.5px solid rgba(160,120,255,0.22);
+  border-radius:20px; padding:5px 13px;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:12px; font-weight:700; color:#7c5cbf; cursor:pointer;
+  transition:background 0.15s; white-space:nowrap;
 }
-.backBtn:hover { background: rgba(255,255,255,0.95); }
+.backBtn:hover { background:rgba(255,255,255,0.95); }
 .levelBadge {
-  font-family: 'Space Mono', monospace;
-  font-size: 11px; font-weight: 700;
-  background: rgba(255,255,255,0.75);
-  border: 1.5px solid rgba(160,120,255,0.2);
-  border-radius: 20px; padding: 5px 14px;
-  color: #7c5cbf; letter-spacing: 0.05em;
+  font-family:'Space Mono',monospace;
+  font-size:11px; font-weight:700;
+  background:rgba(255,255,255,0.78);
+  border:1.5px solid rgba(160,120,255,0.2);
+  border-radius:20px; padding:5px 13px;
+  color:#7c5cbf; letter-spacing:0.05em;
 }
+.topSpacer { width:70px; }
 
-/* ── Main game area ──────────────────────────────────────── */
-.mainArea {
+/* ════════════════════════════════════════════════
+   DESKTOP  (> 620px)
+   Sidebar left, grid right
+════════════════════════════════════════════════ */
+.desktopArea {
   display: flex;
-  flex: 1;
-  min-height: 0;
+  flex: 1; min-height: 0;
   gap: 10px;
   padding: 0 12px 12px;
   overflow: hidden;
 }
-
-/* Left column — fixed width, scrollable vertically */
 .sidebar {
-  display: flex; flex-direction: column;
-  gap: 8px; flex-shrink: 0; width: 172px;
-  overflow-y: auto;
+  display: flex; flex-direction:column;
+  gap:8px; flex-shrink:0; width:170px;
+  overflow-y:auto; padding-bottom:4px;
 }
-
-/* Right column — takes remaining space, scrollable in both axes */
 .gridArea {
-  flex: 1;
-  min-width: 0;
-  overflow: auto;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  flex:1; min-width:0;
+  overflow:auto;
+  display:flex; align-items:flex-start; justify-content:center;
 }
 
-/* ── Mobile ──────────────────────────────────────────────── */
+/* Hide mobile slots on desktop */
+.mobileGrid, .mobileHUD { display:none; }
+
+/* ════════════════════════════════════════════════
+   MOBILE  (≤ 620px)
+   Grid fills remaining space, HUD at bottom
+════════════════════════════════════════════════ */
 @media (max-width: 620px) {
-  .mainArea {
-    flex-direction: column;
-    overflow-y: auto;
-    padding: 0 8px 16px;
+  /* Hide desktop area */
+  .desktopArea { display:none; }
+
+  /* Grid takes all remaining space */
+  .mobileGrid {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0 6px;
   }
-  .sidebar {
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    overflow-y: visible;
+
+  /* Bottom HUD strip */
+  .mobileHUD {
+    display: flex;
     flex-shrink: 0;
-  }
-  .gridArea {
-    width: 100%;
-    overflow: auto;
-    flex: none;
+    gap: 6px;
+    padding: 4px 8px 8px;
+    background: rgba(255,255,255,0.6);
+    border-top: 1px solid rgba(160,130,220,0.12);
+    align-items: stretch;
   }
 }

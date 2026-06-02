@@ -18,44 +18,45 @@ export default function App() {
 
   return (
     <div className={styles.root}>
-      <div className={`${styles.blob} ${styles.blob1}`} />
-      <div className={`${styles.blob} ${styles.blob2}`} />
-      <div className={`${styles.blob} ${styles.blob3}`} />
+      <div className={`${styles.blob} ${styles.blob1}`}/>
+      <div className={`${styles.blob} ${styles.blob2}`}/>
+      <div className={`${styles.blob} ${styles.blob3}`}/>
 
-      {screen === 'select' && (
-        <LevelSelect onSelect={handleSelectLevel} />
-      )}
+      {screen === 'select' && <LevelSelect onSelect={handleSelectLevel}/>}
 
       {screen === 'game' && (
         <div className={styles.gameLayout}>
+
+          {/* ── Top bar ─────────────────────────────── */}
           <div className={styles.topBar}>
-            <button className={styles.backBtn} onClick={() => setScreen('select')}>
-              ← Levels
-            </button>
-            <div className={styles.levelBadge}>
-              Level {levelDef?.id || currentLevelIndex + 1}
-            </div>
-            <div style={{ width: 70 }} />
+            <button className={styles.backBtn} onClick={() => setScreen('select')}>← Levels</button>
+            <div className={styles.levelBadge}>Level {levelDef?.id || currentLevelIndex + 1}</div>
+            <div className={styles.topSpacer}/>
           </div>
 
-          <div className={styles.mainArea}>
+          {/* ── Desktop: sidebar + grid ─────────────── */}
+          <div className={styles.desktopArea}>
             <div className={styles.sidebar}>
-              <HUD />
-              <CentralBot />
+              <HUD/>
+              <CentralBot/>
             </div>
-            <div className={styles.gridArea}>
-              <Grid />
-            </div>
+            <div className={styles.gridArea}><Grid/></div>
           </div>
+
+          {/* ── Mobile: grid fills screen ───────────── */}
+          <div className={styles.mobileGrid}><Grid/></div>
+
+          {/* ── Mobile: bottom HUD strip ────────────── */}
+          <div className={styles.mobileHUD}>
+            <HUD compact/>
+            <CentralBot compact/>
+          </div>
+
         </div>
       )}
 
-      {screen === 'game' && gameState === GAME_STATE.LEVEL_WIN && (
-        <WinOverlay onLevelSelect={() => setScreen('select')} />
-      )}
-      {screen === 'game' && gameState === GAME_STATE.GAME_OVER && (
-        <GameOverOverlay onLevelSelect={() => setScreen('select')} />
-      )}
+      {screen === 'game' && gameState === GAME_STATE.LEVEL_WIN  && <WinOverlay  onLevelSelect={() => setScreen('select')}/>}
+      {screen === 'game' && gameState === GAME_STATE.GAME_OVER  && <GameOverOverlay onLevelSelect={() => setScreen('select')}/>}
     </div>
   );
 }

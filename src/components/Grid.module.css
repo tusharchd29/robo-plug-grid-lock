@@ -1,178 +1,138 @@
-/* ── Outer wrapper — centers the board ──────────────── */
 .outerWrap {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
   width: 100%;
-  padding: 8px 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: auto;
+  padding: 4px;
 }
 
-/* ── Board container ─────────────────────────────────── */
 .board {
   position: relative;
-  user-select: none;
-  touch-action: none;   /* prevent browser scroll hijacking drag */
   flex-shrink: 0;
-  cursor: default;
+  touch-action: none;
+  user-select: none;
 }
 
-/* ── Grid chrome ─────────────────────────────────────── */
 .gridBorder {
   position: absolute;
   background: rgba(255,255,255,0.45);
   border: 1.5px solid rgba(160,130,220,0.22);
-  border-radius: 14px;
+  border-radius: 12px;
   pointer-events: none;
   z-index: 0;
 }
 .gridLineH, .gridLineV {
-  position: absolute;
-  pointer-events: none;
-  z-index: 1;
+  position: absolute; pointer-events: none; z-index: 1;
 }
-.gridLineH { height: 1px; background: rgba(160,130,220,0.11); }
-.gridLineV { width:  1px; background: rgba(160,130,220,0.11); }
+.gridLineH { height:1px; background:rgba(160,130,220,0.11); }
+.gridLineV { width:1px;  background:rgba(160,130,220,0.11); }
 
-/* ── Dead zones ──────────────────────────────────────── */
 .deadZone {
   position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
   background: rgba(160,130,200,0.08);
   border: 1.5px dashed rgba(160,130,200,0.25);
-  z-index: 2;
-  pointer-events: none;
+  z-index: 2; pointer-events: none;
 }
-.deadX { font-size: 18px; color: rgba(160,130,200,0.3); }
+.deadX { font-size: 16px; color: rgba(160,130,200,0.3); }
 
-/* ── Conduits ────────────────────────────────────────── */
+/* ── Conduits ─────────────────────────────── */
 .conduit {
   position: absolute;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--conduit-color-light, rgba(200,180,255,0.2));
-  border: 2.5px solid var(--conduit-color, #c084fc);
-  z-index: 10;
-  cursor: grab;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border: 2px solid var(--conduit-color, #c084fc);
+  z-index: 10; cursor: grab;
+  display: flex; align-items: center; justify-content: center;
   overflow: visible;
   transition: box-shadow 0.15s ease;
 }
 .conduit:active { cursor: grabbing; }
-
 .conduit.selected {
-  box-shadow: 0 0 0 3px var(--conduit-color), 0 4px 18px rgba(0,0,0,0.1);
+  box-shadow: 0 0 0 3px var(--conduit-color), 0 2px 14px rgba(0,0,0,0.1);
   z-index: 20;
 }
-
 @keyframes nudge {
-  0%   { transform: translateX(0);   }
-  20%  { transform: translateX(-8px); }
-  50%  { transform: translateX(7px);  }
-  75%  { transform: translateX(-3px); }
-  100% { transform: translateX(0);   }
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-7px); }
+  55%  { transform: translateX(6px); }
+  80%  { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
 }
-.conduit.nudge { animation: nudge 0.36s ease-in-out; }
+.conduit.nudge { animation: nudge 0.35s ease-in-out; }
 
-/* Inner decoration — pointer-events none so they don't eat pointer downs */
 .conduitInner {
-  position: relative;
-  width: 100%; height: 100%;
-  border-radius: 10px;
-  overflow: hidden;
-  pointer-events: none;
+  position: relative; width:100%; height:100%;
+  border-radius: 8px; overflow: hidden; pointer-events: none;
 }
 .conduitLine {
   position: absolute;
   background: var(--conduit-color);
-  opacity: 0.3;
-  border-radius: 2px;
-  pointer-events: none;
+  opacity: 0.28; border-radius: 2px; pointer-events: none;
 }
-.horizontal .conduitLine { width: calc(100% - 20px); height: 3px; left: 10px; }
-.horizontal .conduitLine:nth-child(1) { top: calc(35% - 1.5px); }
-.horizontal .conduitLine:nth-child(2) { top: calc(65% - 1.5px); }
-.vertical   .conduitLine { height: calc(100% - 20px); width: 3px; top: 10px; }
-.vertical   .conduitLine:nth-child(1) { left: calc(35% - 1.5px); }
-.vertical   .conduitLine:nth-child(2) { left: calc(65% - 1.5px); }
+.horizontal .conduitLine { width:calc(100% - 16px); height:3px; left:8px; }
+.horizontal .conduitLine:nth-child(1) { top:calc(35% - 1.5px); }
+.horizontal .conduitLine:nth-child(2) { top:calc(65% - 1.5px); }
+.vertical   .conduitLine { height:calc(100% - 16px); width:3px; top:8px; }
+.vertical   .conduitLine:nth-child(1) { left:calc(35% - 1.5px); }
+.vertical   .conduitLine:nth-child(2) { left:calc(65% - 1.5px); }
 
 .conduitEndcap {
   position: absolute;
-  width: 13px; height: 13px;
-  border-radius: 50%;
-  background: var(--conduit-color);
-  opacity: 0.8;
-  pointer-events: none;
+  width:11px; height:11px; border-radius:50%;
+  background: var(--conduit-color); opacity:0.8; pointer-events:none;
 }
-.horizontal .conduitEndcap:nth-child(3) { left: 7px;   top: 50%;  transform: translateY(-50%); }
-.horizontal .conduitEndcap:nth-child(4) { right: 7px;  top: 50%;  transform: translateY(-50%); }
-.vertical   .conduitEndcap:nth-child(3) { top: 7px;    left: 50%; transform: translateX(-50%); }
-.vertical   .conduitEndcap:nth-child(4) { bottom: 7px; left: 50%; transform: translateX(-50%); }
+.horizontal .conduitEndcap:nth-child(3) { left:5px;   top:50%;  transform:translateY(-50%); }
+.horizontal .conduitEndcap:nth-child(4) { right:5px;  top:50%;  transform:translateY(-50%); }
+.vertical   .conduitEndcap:nth-child(3) { top:5px;    left:50%; transform:translateX(-50%); }
+.vertical   .conduitEndcap:nth-child(4) { bottom:5px; left:50%; transform:translateX(-50%); }
 
-/* ── Direction arrow hints ───────────────────────────── */
-.arrowHints {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 30;
-}
+/* ── Arrow hints ──────────────────────────── */
+.arrowHints { position:absolute; inset:0; pointer-events:none; z-index:30; }
 .arrow {
-  position: absolute;
-  font-size: 11px;
-  color: var(--conduit-color);
+  position:absolute; font-size:10px;
+  color:var(--conduit-color);
   animation: arrowPulse 1.1s ease-in-out infinite;
-  line-height: 1;
-  pointer-events: none;
+  pointer-events:none; line-height:1;
 }
-.arrowLeft   { left: -22px;   top: 50%;    transform: translateY(-50%); }
-.arrowRight  { right: -22px;  top: 50%;    transform: translateY(-50%); }
-.arrowUp     { top: -22px;    left: 50%;   transform: translateX(-50%); }
-.arrowDown   { bottom: -22px; left: 50%;   transform: translateX(-50%); }
-@keyframes arrowPulse {
-  0%,100% { opacity: 0.3; }
-  50%     { opacity: 0.9; }
-}
+.arrowLeft   { left:-20px;   top:50%;    transform:translateY(-50%); }
+.arrowRight  { right:-20px;  top:50%;    transform:translateY(-50%); }
+.arrowUp     { top:-20px;    left:50%;   transform:translateX(-50%); }
+.arrowDown   { bottom:-20px; left:50%;   transform:translateX(-50%); }
+@keyframes arrowPulse { 0%,100%{opacity:0.3} 50%{opacity:0.9} }
 
-/* ── Exit robots ─────────────────────────────────────── */
+/* ── Robots ───────────────────────────────── */
 .robot {
   position: absolute;
-  width: 40px; height: 40px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.75);
-  border: 1.5px solid rgba(255,255,255,0.9);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 5;
-  pointer-events: none;
+  border-radius: 9px;
+  background: rgba(255,255,255,0.78);
+  border: 1.5px solid rgba(255,255,255,0.95);
+  display: flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  z-index:5; pointer-events:none;
   transition: box-shadow 0.3s;
 }
 .robotFace {
-  font-family: 'Space Mono', monospace;
-  font-size: 9px; font-weight: 700;
-  color: #4a3470; line-height: 1;
+  font-family:'Space Mono',monospace;
+  font-weight:700; color:#4a3470; line-height:1;
 }
 .robotColorDot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  border: 1.5px solid white;
-  position: absolute;
-  bottom: -3px; right: -3px;
+  width:6px; height:6px; border-radius:50%;
+  border:1.5px solid white;
+  position:absolute; bottom:-3px; right:-3px;
 }
 .robot.satisfied {
-  background: rgba(255,255,255,0.95);
-  box-shadow: 0 0 0 3px var(--robot-color), 0 2px 10px rgba(0,0,0,0.06);
+  background:rgba(255,255,255,0.95);
+  box-shadow:0 0 0 2.5px var(--robot-color), 0 2px 8px rgba(0,0,0,0.06);
 }
 @keyframes bootUp {
-  0%   { transform: scale(1);    box-shadow: 0 0 0 2px var(--robot-color); }
-  25%  { transform: scale(1.22); box-shadow: 0 0 0 7px var(--robot-color); }
-  55%  { transform: scale(0.95); box-shadow: 0 0 0 2px var(--robot-color); }
-  80%  { transform: scale(1.08); box-shadow: 0 0 0 4px var(--robot-color); }
-  100% { transform: scale(1);    box-shadow: 0 0 0 3px var(--robot-color); }
+  0%  { transform:scale(1);    box-shadow:0 0 0 2px var(--robot-color); }
+  25% { transform:scale(1.22); box-shadow:0 0 0 7px var(--robot-color); }
+  55% { transform:scale(0.94); box-shadow:0 0 0 2px var(--robot-color); }
+  80% { transform:scale(1.08); box-shadow:0 0 0 4px var(--robot-color); }
+  100%{ transform:scale(1);    box-shadow:0 0 0 2.5px var(--robot-color); }
 }
-.robot.booting { animation: bootUp 0.85s cubic-bezier(0.22,1,0.36,1) forwards; }
+.robot.booting { animation:bootUp 0.85s cubic-bezier(0.22,1,0.36,1) forwards; }
