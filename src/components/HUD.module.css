@@ -1,0 +1,99 @@
+.wrap {
+  background: rgba(255,255,255,0.58);
+  border: 1.5px solid rgba(255,255,255,0.92);
+  border-radius: 20px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+.stat {
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: 12px;
+  padding: 8px 6px;
+  text-align: center;
+}
+.statLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a89bc2;
+  margin-bottom: 2px;
+}
+.statVal {
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: #4a3470;
+}
+.statVal.warn { color: #e86b9a; }
+.statVal.good { color: #5abf8a; }
+
+.starsRow {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+.star {
+  font-size: 18px;
+  opacity: 0.2;
+  transition: opacity 0.3s, filter 0.3s;
+}
+.star.filled {
+  opacity: 1;
+  filter: drop-shadow(0 0 3px #ffd966);
+}
+
+.moveBarWrap { width: 100%; }
+.moveBarLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b0a0d0;
+  margin-bottom: 4px;
+}
+.moveBarTrack {
+  background: rgba(200,190,220,0.28);
+  border-radius: 99px;
+  height: 5px;
+  overflow: hidden;
+}
+.moveBarFill {
+  height: 100%;
+  border-radius: 99px;
+  background: #a78bfa;
+  transition: width 0.35s ease, background 0.35s ease;
+}
+.moveBarFill.caution { background: #fbbf24; }
+.moveBarFill.danger  { background: #f87171; }
+
+.actionRow {
+  display: flex;
+  gap: 8px;
+}
+.btn {
+  flex: 1;
+  padding: 9px;
+  background: rgba(255,255,255,0.75);
+  border: 1.5px solid rgba(160,120,255,0.22);
+  border-radius: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7c5cbf;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn:hover   { background: rgba(255,255,255,0.92); }
+.btn:active  { transform: scale(0.97); }

@@ -1,0 +1,209 @@
+.outerWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 12px;
+}
+
+.board {
+  position: relative;
+  cursor: default;
+  user-select: none;
+  touch-action: none;
+  flex-shrink: 0;
+}
+
+.gridBorder {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.45);
+  border: 2px solid rgba(160, 130, 220, 0.25);
+  border-radius: 14px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.gridLineH,
+.gridLineV {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+}
+.gridLineH { height: 1px; background: rgba(160, 130, 220, 0.12); }
+.gridLineV { width: 1px;  background: rgba(160, 130, 220, 0.12); }
+
+/* ── Dead zones ────────────────────────────────────────────── */
+.deadZone {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(160, 130, 200, 0.08);
+  border: 1.5px dashed rgba(160, 130, 200, 0.28);
+  z-index: 2;
+  pointer-events: none;
+}
+.deadX {
+  font-size: 20px;
+  color: rgba(160, 130, 200, 0.35);
+}
+
+/* ── Conduits ──────────────────────────────────────────────── */
+.conduit {
+  position: absolute;
+  border-radius: 12px;
+  background: var(--conduit-color-light);
+  border: 2.5px solid var(--conduit-color);
+  z-index: 10;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.2s ease,
+              left 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              top  0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.conduit:active { cursor: grabbing; }
+
+.conduitInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.conduitLine {
+  position: absolute;
+  background: var(--conduit-color);
+  opacity: 0.35;
+  border-radius: 2px;
+}
+.horizontal .conduitLine {
+  width: calc(100% - 24px);
+  height: 3px;
+  left: 12px;
+}
+.horizontal .conduitLine:nth-child(1) { top: calc(35% - 1.5px); }
+.horizontal .conduitLine:nth-child(2) { top: calc(65% - 1.5px); }
+
+.vertical .conduitLine {
+  height: calc(100% - 24px);
+  width: 3px;
+  top: 12px;
+}
+.vertical .conduitLine:nth-child(1) { left: calc(35% - 1.5px); }
+.vertical .conduitLine:nth-child(2) { left: calc(65% - 1.5px); }
+
+.conduitEndcap {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--conduit-color);
+  opacity: 0.85;
+}
+.horizontal .conduitEndcap:nth-child(3) { left: 6px;  top: 50%; transform: translateY(-50%); }
+.horizontal .conduitEndcap:nth-child(4) { right: 6px; top: 50%; transform: translateY(-50%); }
+.vertical   .conduitEndcap:nth-child(3) { top: 6px;    left: 50%; transform: translateX(-50%); }
+.vertical   .conduitEndcap:nth-child(4) { bottom: 6px; left: 50%; transform: translateX(-50%); }
+
+/* Selected */
+.conduit.selected {
+  box-shadow: 0 0 0 3px var(--conduit-color), 0 4px 20px rgba(0,0,0,0.12);
+  z-index: 20;
+}
+
+/* Nudge / blocked animation */
+@keyframes nudge {
+  0%  { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+.conduit.nudge {
+  animation: nudge 0.38s ease-in-out;
+}
+
+/* Direction arrows when selected */
+.arrows {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.arrow {
+  position: absolute;
+  font-size: 13px;
+  color: var(--conduit-color);
+  opacity: 0.7;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: arrowPulse 1.2s ease-in-out infinite;
+}
+.vertical .arrow {
+  top: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+@keyframes arrowPulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.9; }
+}
+
+/* ── Robots ────────────────────────────────────────────────── */
+.robot {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  transition: box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.robotFace {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #4a3470;
+  line-height: 1;
+}
+
+.robotColorDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid white;
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+}
+
+.robot.satisfied {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 3px var(--robot-color, #34d399), 0 2px 12px rgba(0,0,0,0.08);
+}
+
+@keyframes bootUp {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 2px var(--robot-color); }
+  20%  { transform: scale(1.18); box-shadow: 0 0 0 5px var(--robot-color); }
+  40%  { transform: scale(0.95); box-shadow: 0 0 0 2px var(--robot-color); }
+  60%  { transform: scale(1.10); box-shadow: 0 0 0 4px var(--robot-color); }
+  80%  { transform: scale(0.98); box-shadow: 0 0 0 3px var(--robot-color); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 3px var(--robot-color); }
+}
+.robot.booting {
+  animation: bootUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
