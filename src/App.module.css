@@ -1,8 +1,11 @@
 .root {
-  min-height: 100vh; min-height: 100dvh;
+  height: 100%;
+  height: 100dvh;
   background: #f0ecff;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Blobs ──────────────────────────────────── */
@@ -82,17 +85,31 @@
     flex: 1;
     min-height: 0;
     overflow: hidden;
-    padding: 0 6px;
+    padding: 0 4px;
+    align-items: center;
+    justify-content: center;
   }
 
-  /* Bottom HUD strip */
+  /* Bottom HUD strip — taller, easier to tap */
   .mobileHUD {
     display: flex;
     flex-shrink: 0;
-    gap: 6px;
-    padding: 4px 8px 8px;
-    background: rgba(255,255,255,0.6);
-    border-top: 1px solid rgba(160,130,220,0.12);
+    gap: 8px;
+    padding: 8px 10px 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: rgba(255,255,255,0.7);
+    border-top: 1px solid rgba(160,130,220,0.15);
     align-items: stretch;
+    min-height: 72px;
+  }
+
+  /* Top bar tighter on mobile */
+  .topBar {
+    padding: 10px 12px 6px;
+  }
+
+  .backBtn, .levelBadge {
+    font-size: 13px;
+    padding: 7px 14px;
   }
 }

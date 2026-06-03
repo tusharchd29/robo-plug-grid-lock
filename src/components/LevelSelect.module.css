@@ -1,11 +1,13 @@
 .wrap {
   max-width: 500px;
   margin: 0 auto;
-  padding: 28px 16px 32px;
+  padding: 28px 16px max(32px, env(safe-area-inset-bottom));
   position: relative; z-index:1;
+  overflow-y: auto;
+  max-height: 100dvh;
 }
 
-.header { text-align:center;margin-bottom:28px; }
+.header { text-align:center;margin-bottom:24px; }
 .title {
   font-family:'Space Mono',monospace;
   font-size:clamp(26px,7vw,40px);
@@ -21,12 +23,13 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
 
 /* On small screens, 4 columns */
 @media (max-width: 380px) {
-  .grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .wrap { padding: 20px 12px 24px; }
 }
 
 .levelBtn {
@@ -37,9 +40,10 @@
   border-radius:14px;
   cursor:pointer;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:2px;padding:6px 2px;
+  gap:3px;padding:6px 2px;
   transition:background 0.15s,transform 0.12s,border-color 0.15s;
   -webkit-tap-highlight-color: transparent;
+  min-height: 56px;
 }
 .levelBtn:hover:not(.locked) { background:rgba(255,255,255,0.95);border-color:rgba(160,120,255,0.38);transform:scale(1.04); }
 .levelBtn:active:not(.locked){ transform:scale(0.95); }
@@ -48,15 +52,15 @@
 
 .levelNum {
   font-family:'Space Mono',monospace;
-  font-size:clamp(13px,4vw,17px);font-weight:700;color:#4a3470;
+  font-size:clamp(14px,4vw,18px);font-weight:700;color:#4a3470;
 }
-.levelStars { display:flex;gap:1px;font-size:8px; }
+.levelStars { display:flex;gap:1px;font-size:9px; }
 .starFilled { color:#fbbf24; }
 .starEmpty  { color:rgba(160,130,180,0.22); }
 
 .diffPill {
-  font-size:6px;font-weight:700;letter-spacing:0.06em;
-  text-transform:uppercase;border-radius:99px;padding:2px 5px;
+  font-size:7px;font-weight:700;letter-spacing:0.06em;
+  text-transform:uppercase;border-radius:99px;padding:2px 6px;
 }
 .easy { background:#d1fae5;color:#065f46; }
 .mid  { background:#fef3c7;color:#713f12; }
@@ -64,5 +68,5 @@
 
 .lockIcon {
   position:absolute;top:50%;left:50%;
-  transform:translate(-50%,-50%);font-size:14px;
+  transform:translate(-50%,-50%);font-size:16px;
 }

@@ -56,21 +56,21 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
-  padding: 0 6px;
+  padding: 0 8px;
   border-left: 1px solid rgba(160,130,220,0.15);
 }
 .compactFace {
   font-family:'Space Mono',monospace;
-  font-size:18px;font-weight:700;line-height:1;
+  font-size:22px;font-weight:700;line-height:1;
   flex-shrink:0;
 }
 .compactFace.dancing { animation:dance 0.7s ease-in-out infinite; }
 
-.compactDots { display:flex;flex-wrap:wrap;gap:3px;max-width:48px; }
+.compactDots { display:flex;flex-wrap:wrap;gap:4px;max-width:52px; }
 .compactDot {
-  width:10px;height:10px;border-radius:50%;
+  width:12px;height:12px;border-radius:50%;
   border:1.5px solid rgba(255,255,255,0.85);
   transition:opacity 0.4s ease,transform 0.3s ease;
   flex-shrink:0;

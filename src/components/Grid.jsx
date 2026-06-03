@@ -3,15 +3,15 @@ import { useGameStore, GAME_STATE } from '../store/gameStore';
 import { getConduitCells, DIR } from '../engine/gameEngine';
 import styles from './Grid.module.css';
 
-const PADDING = 44;
-const DRAG_THRESHOLD = 6;
+const PADDING = 36;
+const DRAG_THRESHOLD = 8;
 
 // Compute cell size based on available container width
 function getCellSize(cols, rows, maxW, maxH) {
-  const usable = Math.min(maxW - PADDING * 2, maxH - PADDING * 2);
-  const byCol  = Math.floor((maxW  - PADDING * 2) / cols);
-  const byRow  = Math.floor((maxH  - PADDING * 2) / rows);
-  return Math.max(36, Math.min(64, byCol, byRow));
+  const byCol = Math.floor((maxW - PADDING * 2) / cols);
+  const byRow = Math.floor((maxH - PADDING * 2) / rows);
+  const raw   = Math.min(byCol, byRow);
+  return Math.max(44, Math.min(72, raw));
 }
 
 export default function Grid() {
@@ -49,12 +49,20 @@ export default function Grid() {
 
   // ── Global pointer up on window ───────────────────────────────────────────
   useEffect(() => {
+    function getXY(e) {
+      if (e.changedTouches && e.changedTouches.length > 0) {
+        return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
+    }
+
     function onUp(e) {
       if (!drag.current) return;
       const { conduitId, startX, startY } = drag.current;
       drag.current = null;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
+      const { x, y } = getXY(e);
+      const dx = x - startX;
+      const dy = y - startY;
       if (Math.max(Math.abs(dx), Math.abs(dy)) < DRAG_THRESHOLD) return;
       let dir;
       if (Math.abs(dx) >= Math.abs(dy)) dir = dx > 0 ? DIR.RIGHT : DIR.LEFT;
@@ -62,7 +70,11 @@ export default function Grid() {
       attemptMove(conduitId, dir);
     }
     window.addEventListener('pointerup', onUp);
-    return () => window.removeEventListener('pointerup', onUp);
+    window.addEventListener('touchend', onUp, { passive: true });
+    return () => {
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('touchend', onUp);
+    };
   }, [attemptMove]);
 
   // ── Keyboard ──────────────────────────────────────────────────────────────
@@ -80,7 +92,12 @@ export default function Grid() {
     if (gameState !== GAME_STATE.IDLE) return;
     e.preventDefault(); e.stopPropagation();
     selectConduit(conduit.id);
-    drag.current = { conduitId: conduit.id, startX: e.clientX, startY: e.clientY };
+    let startX = e.clientX, startY = e.clientY;
+    if (e.touches && e.touches.length > 0) {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }
+    drag.current = { conduitId: conduit.id, startX, startY };
   }, [gameState, selectConduit]);
 
   const onBoardDown = useCallback((e) => {
