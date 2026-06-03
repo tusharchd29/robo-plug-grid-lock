@@ -1,226 +1,277 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
-// happiness 0-1
-export default function CatCharacter({ happiness = 0 }) {
-  const [blink, setBlink] = useState(false);
-  const [tailWag, setTailWag] = useState(0);
-  const [bounce, setBounce] = useState(false);
-  const [prevHappy, setPrevHappy] = useState(happiness);
+// timeRatio: 0=no time left, 1=full time
+// progressRatio: 0=nothing freed, 1=all freed
+export default function CatCharacter({ timeRatio = 1, progressRatio = 0, timerStarted = false }) {
+  const [blink, setBlink]       = useState(false);
+  const [pawTap, setPawTap]     = useState(false);
+  const [tailPhase, setTailPhase] = useState(0);
+  const [sweatDrop, setSweatDrop] = useState(false);
+  const [bounce, setBounce]     = useState(false);
+  const [prevProg, setPrevProg] = useState(progressRatio);
+  const frameRef = useRef(0);
 
-  // Blinking
+  // Anxiety: high when time low AND progress low
+  // Hope: high when progress high regardless of time
+  const anxiety = timerStarted ? Math.max(0, (1 - timeRatio) * (1 - progressRatio)) : 0;
+  const hope    = progressRatio;
+  // Combined mood: 0=panic, 0.5=neutral, 1=joy
+  const mood    = Math.max(hope, 1 - anxiety);
+
+  // Blink — faster when anxious
   useEffect(() => {
-    const interval = setInterval(() => {
+    const blinkInterval = () => 1800 + (1 - anxiety) * 2000 + Math.random() * 1000;
+    let t = setTimeout(function tick() {
       setBlink(true);
-      setTimeout(() => setBlink(false), 150);
-    }, 3000 + Math.random() * 2000);
-    return () => clearInterval(interval);
-  }, []);
+      setTimeout(() => setBlink(false), 100);
+      t = setTimeout(tick, blinkInterval());
+    }, blinkInterval());
+    return () => clearTimeout(t);
+  }, [anxiety]);
 
-  // Tail wag speed based on happiness
+  // Tail animation loop
   useEffect(() => {
+    let raf;
+    const speed = anxiety > 0.7 ? 0.08 : hope > 0.6 ? 0.06 : 0.025;
+    const tick = () => {
+      setTailPhase(p => p + speed);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [anxiety, hope]);
+
+  // Paw tap when anxious
+  useEffect(() => {
+    if (anxiety < 0.4) return;
     const interval = setInterval(() => {
-      setTailWag(t => (t + 1) % 100);
-    }, happiness > 0.7 ? 80 : happiness > 0.4 ? 140 : 220);
+      setPawTap(true);
+      setTimeout(() => setPawTap(false), 200);
+    }, 600 - anxiety * 400);
     return () => clearInterval(interval);
-  }, [happiness]);
+  }, [anxiety]);
 
-  // Bounce on happiness increase
+  // Sweat drop when panic
   useEffect(() => {
-    if (happiness > prevHappy) {
+    if (anxiety < 0.7) { setSweatDrop(false); return; }
+    const interval = setInterval(() => {
+      setSweatDrop(true);
+      setTimeout(() => setSweatDrop(false), 800);
+    }, 1200);
+    return () => clearInterval(interval);
+  }, [anxiety]);
+
+  // Bounce on progress increase
+  useEffect(() => {
+    if (progressRatio > prevProg) {
       setBounce(true);
-      setTimeout(() => setBounce(false), 600);
+      setTimeout(() => setBounce(false), 500);
     }
-    setPrevHappy(happiness);
-  }, [happiness]);
+    setPrevProg(progressRatio);
+  }, [progressRatio]);
 
-  const h = happiness;
+  // ── Derived visuals ──────────────────────────────
+  const shakeX = anxiety > 0.6 ? Math.sin(tailPhase * 8) * (anxiety - 0.6) * 14 : 0;
+  const shakeY = anxiety > 0.7 ? Math.cos(tailPhase * 7) * (anxiety - 0.7) * 6  : 0;
+  const bounceY = bounce ? -10 : 0;
 
-  // Eye expressions
-  const eyeOpen = blink ? 1 : 0;
-  // 0=sad closed, 0.5=neutral, 1=happy curved
-  const eyeHappy = h;
+  // Ear angles: droopy when panicking, perky when hopeful
+  const earLRot = anxiety > 0.5 ? -25 + anxiety * -15 : -15 + hope * 20;
+  const earRRot =  anxiety > 0.5 ?  25 + anxiety *  15 :  15 - hope * 20;
 
-  // Ear angle: droopy when sad, perky when happy
-  const earRotL = -15 + h * 25;
-  const earRotR = 15 - h * 25;
+  // Body color shifts: grey-lavender when sad → warm cream when happy
+  const bodyCol  = lerpColor('#c4b8d8', '#fde8c8', mood);
+  const innerCol = lerpColor('#ddd6ee', '#fff5e0', mood);
+  const noseCol  = mood > 0.5 ? '#f472b6' : anxiety > 0.7 ? '#cc2060' : '#a070b8';
 
-  // Mouth curve
-  const mouthCurve = h > 0.5 ? 'smile' : h > 0.2 ? 'neutral' : 'frown';
+  // Tail wag: slow & droopy when sad, fast & perky when happy, frantic when panicking
+  const tailSwing = anxiety > 0.7
+    ? Math.sin(tailPhase * 3) * 45        // frantic
+    : hope > 0.6
+    ? Math.sin(tailPhase * 2) * 35        // happy wagging
+    : Math.sin(tailPhase)     * 18;       // slow/droopy
 
-  // Cheek blush visibility
-  const blushOpacity = h > 0.5 ? (h - 0.5) * 2 : 0;
+  // Pupil dilation: wide when scared
+  const pupilR = anxiety > 0.6 ? 7 + anxiety * 4 : hope > 0.6 ? 5 : 7;
 
-  // Body color: grey-ish when sad, warm cream when happy
-  const bodyColor = interpolateColor('#b8b0c8', '#fde8c8', h);
-  const innerColor = interpolateColor('#d8d0e8', '#fff0dc', h);
-
-  // Tail wag angle
-  const tailAngle = Math.sin(tailWag * 0.2) * (15 + h * 30);
-
-  const bounceY = bounce ? -8 : 0;
+  // Blush
+  const blushA = hope > 0.4 ? (hope - 0.4) * 1.2 : 0;
 
   return (
     <svg
-      viewBox="0 0 200 180"
+      viewBox="0 0 200 190"
       xmlns="http://www.w3.org/2000/svg"
       style={{
-        width: '100%',
-        height: '100%',
-        filter: 'drop-shadow(0 4px 12px rgba(180,140,200,0.25))',
-        transform: `translateY(${bounceY}px)`,
-        transition: 'transform 0.15s cubic-bezier(0.34,1.56,0.64,1)',
+        width: '100%', height: '100%',
         overflow: 'visible',
+        filter: `drop-shadow(0 4px 16px rgba(160,100,180,0.2))`,
+        transform: `translate(${shakeX}px, ${shakeY + bounceY}px)`,
+        transition: bounce ? 'transform 0.1s' : 'transform 0.05s',
       }}
     >
-      {/* ── Tail ─────────────────────────────── */}
-      <g transform={`translate(148, 138) rotate(${tailAngle})`} style={{ transformOrigin: '0 0' }}>
-        <path
-          d="M0,0 Q20,-10 30,-30 Q38,-50 25,-65"
-          stroke={bodyColor}
-          strokeWidth="12"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M0,0 Q20,-10 30,-30 Q38,-50 25,-65"
-          stroke={innerColor}
-          strokeWidth="7"
-          strokeLinecap="round"
-          fill="none"
-          opacity="0.6"
-        />
-        {/* Tail tip */}
-        <circle cx="25" cy="-65" r="8" fill={h > 0.5 ? '#f9a8d4' : '#c4b8d8'} />
+      {/* ── Tail ──────────────────────────────────── */}
+      <g transform={`translate(150,145)`}>
+        <g transform={`rotate(${tailSwing})`} style={{ transformOrigin: '0 0' }}>
+          <path d="M0,0 Q18,-8 26,-28 Q32,-48 20,-60"
+            stroke={bodyCol} strokeWidth="13" strokeLinecap="round" fill="none"/>
+          <path d="M0,0 Q18,-8 26,-28 Q32,-48 20,-60"
+            stroke={innerCol} strokeWidth="7" strokeLinecap="round" fill="none" opacity="0.6"/>
+          <circle cx="20" cy="-60" r="9"
+            fill={hope > 0.5 ? '#f9a8d4' : anxiety > 0.6 ? '#f87171' : '#c4b0d8'}/>
+        </g>
       </g>
 
-      {/* ── Body ─────────────────────────────── */}
-      <ellipse cx="100" cy="140" rx="52" ry="38" fill={bodyColor} />
-      <ellipse cx="100" cy="138" rx="38" ry="28" fill={innerColor} />
+      {/* ── Body ──────────────────────────────────── */}
+      <ellipse cx="100" cy="148" rx="54" ry="38" fill={bodyCol}/>
+      <ellipse cx="100" cy="145" rx="40" ry="28" fill={innerCol}/>
 
-      {/* ── Legs/paws ─────────────────────────── */}
-      <ellipse cx="72" cy="165" rx="16" ry="10" fill={bodyColor} />
-      <ellipse cx="128" cy="165" rx="16" ry="10" fill={bodyColor} />
-      <ellipse cx="72" cy="166" rx="10" ry="6" fill={innerColor} />
-      <ellipse cx="128" cy="166" rx="10" ry="6" fill={innerColor} />
+      {/* ── Front paws ────────────────────────────── */}
+      <ellipse cx="74" cy={170 + (pawTap ? -3 : 0)} rx="17" ry="11" fill={bodyCol}
+        style={{ transition: 'cy 0.05s' }}/>
+      <ellipse cx="126" cy={170 + (anxiety > 0.4 && !pawTap ? -3 : 0)} rx="17" ry="11" fill={bodyCol}
+        style={{ transition: 'cy 0.05s' }}/>
+      <ellipse cx="74"  cy={171 + (pawTap ? -3 : 0)} rx="11" ry="6.5" fill={innerCol}/>
+      <ellipse cx="126" cy={171 + (anxiety > 0.4 && !pawTap ? -3 : 0)} rx="11" ry="6.5" fill={innerCol}/>
       {/* Toe lines */}
-      <line x1="68" y1="163" x2="67" y2="170" stroke={bodyColor} strokeWidth="1.5" strokeOpacity="0.4" />
-      <line x1="72" y1="163" x2="72" y2="170" stroke={bodyColor} strokeWidth="1.5" strokeOpacity="0.4" />
-      <line x1="76" y1="163" x2="77" y2="170" stroke={bodyColor} strokeWidth="1.5" strokeOpacity="0.4" />
+      {[68,73,78].map((x,i) => (
+        <line key={i} x1={x} y1="167" x2={x-1+i} y2="173"
+          stroke={bodyCol} strokeWidth="1.2" opacity="0.35"/>
+      ))}
+      {[120,125,130].map((x,i) => (
+        <line key={i} x1={x} y1="167" x2={x-1+i} y2="173"
+          stroke={bodyCol} strokeWidth="1.2" opacity="0.35"/>
+      ))}
 
-      {/* ── Head ─────────────────────────────── */}
-      <ellipse cx="100" cy="95" rx="46" ry="44" fill={bodyColor} />
-      <ellipse cx="100" cy="97" rx="34" ry="32" fill={innerColor} opacity="0.5" />
+      {/* ── Head ──────────────────────────────────── */}
+      <ellipse cx="100" cy="98" rx="48" ry="46" fill={bodyCol}/>
+      <ellipse cx="100" cy="100" rx="35" ry="33" fill={innerCol} opacity="0.45"/>
 
-      {/* ── Ears ─────────────────────────────── */}
-      {/* Left ear */}
-      <g transform={`translate(62, 60) rotate(${earRotL})`}>
-        <polygon points="0,0 -18,-32 16,-28" fill={bodyColor} />
-        <polygon points="2,-3 -10,-24 12,-21" fill={h > 0.4 ? '#f9a8d4' : '#d4c8e8'} />
+      {/* ── Ears ──────────────────────────────────── */}
+      <g transform={`translate(62,58) rotate(${earLRot})`}>
+        <polygon points="0,0 -20,-36 18,-30" fill={bodyCol}/>
+        <polygon points="2,-3 -11,-26 13,-22" fill={hope > 0.3 ? '#f9a8d4' : '#d0c0e0'}/>
       </g>
-      {/* Right ear */}
-      <g transform={`translate(138, 60) rotate(${earRotR})`}>
-        <polygon points="0,0 18,-32 -16,-28" fill={bodyColor} />
-        <polygon points="-2,-3 10,-24 -12,-21" fill={h > 0.4 ? '#f9a8d4' : '#d4c8e8'} />
+      <g transform={`translate(138,58) rotate(${earRRot})`}>
+        <polygon points="0,0 20,-36 -18,-30" fill={bodyCol}/>
+        <polygon points="-2,-3 11,-26 -13,-22" fill={hope > 0.3 ? '#f9a8d4' : '#d0c0e0'}/>
       </g>
 
-      {/* ── Eyes ─────────────────────────────── */}
-      {eyeOpen === 0 ? (
-        // Blink
+      {/* ── Eyes ──────────────────────────────────── */}
+      {blink ? (
         <>
-          <path d="M82,92 Q88,88 94,92" stroke="#5a3e6e" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <path d="M106,92 Q112,88 118,92" stroke="#5a3e6e" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M80,95 Q88,91 96,95" stroke="#5a3060" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+          <path d="M104,95 Q112,91 120,95" stroke="#5a3060" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
         </>
-      ) : eyeHappy > 0.6 ? (
-        // Happy curved eyes (^_^)
+      ) : hope > 0.65 ? (
+        /* Happy curved ^_^ */
         <>
-          <path d="M80,93 Q88,83 96,93" stroke="#5a3e6e" strokeWidth="3" fill="none" strokeLinecap="round" />
-          <path d="M104,93 Q112,83 120,93" stroke="#5a3e6e" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <path d="M79,96 Q88,86 97,96" stroke="#5a3060" strokeWidth="3" fill="none" strokeLinecap="round"/>
+          <path d="M103,96 Q112,86 121,96" stroke="#5a3060" strokeWidth="3" fill="none" strokeLinecap="round"/>
         </>
       ) : (
-        // Normal round eyes
+        /* Round eyes — bigger = more scared */
         <>
-          <circle cx="88" cy="93" r={9 - eyeHappy * 2} fill="#5a3e6e" />
-          <circle cx="112" cy="93" r={9 - eyeHappy * 2} fill="#5a3e6e" />
-          <circle cx="91" cy="90" r="2.5" fill="white" opacity="0.9" />
-          <circle cx="115" cy="90" r="2.5" fill="white" opacity="0.9" />
-          {/* Sad eyebrows */}
-          {h < 0.3 && (
-            <>
-              <path d="M81,83 Q88,79 95,82" stroke="#5a3e6e" strokeWidth="2" fill="none" strokeLinecap="round" />
-              <path d="M105,82 Q112,79 119,83" stroke="#5a3e6e" strokeWidth="2" fill="none" strokeLinecap="round" />
-            </>
+          <circle cx="88" cy="95" r={pupilR} fill="#5a3060"/>
+          <circle cx="112" cy="95" r={pupilR} fill="#5a3060"/>
+          <circle cx="91"  cy="92" r="2.5" fill="white" opacity="0.9"/>
+          <circle cx="115" cy="92" r="2.5" fill="white" opacity="0.9"/>
+          {/* Extra scared shine */}
+          {anxiety > 0.5 && <>
+            <circle cx="84" cy="99" r="1.5" fill="white" opacity="0.6"/>
+            <circle cx="108" cy="99" r="1.5" fill="white" opacity="0.6"/>
+          </>}
+          {/* Worry brows */}
+          {anxiety > 0.3 && <>
+            <path d="M80,84 Q88,79 95,83" stroke="#5a3060" strokeWidth="2" fill="none" strokeLinecap="round"
+              transform={`rotate(${anxiety * 12}, 88, 83)`}/>
+            <path d="M105,83 Q112,79 120,84" stroke="#5a3060" strokeWidth="2" fill="none" strokeLinecap="round"
+              transform={`rotate(${-anxiety * 12}, 112, 83)`}/>
+          </>}
+        </>
+      )}
+
+      {/* ── Cheek blush ───────────────────────────── */}
+      <ellipse cx="72" cy="107" rx="11" ry="6" fill="#f9a8d4" opacity={blushA * 0.65}/>
+      <ellipse cx="128" cy="107" rx="11" ry="6" fill="#f9a8d4" opacity={blushA * 0.65}/>
+
+      {/* ── Nose ──────────────────────────────────── */}
+      <ellipse cx="100" cy="107" rx="4.5" ry="3" fill={noseCol}/>
+
+      {/* ── Whiskers ──────────────────────────────── */}
+      {[
+        [54,103, 83,106], [52,109, 82,109], [54,115, 83,112],
+        [117,106,146,103],[118,109,148,109],[117,112,146,115],
+      ].map(([x1,y1,x2,y2],i) => (
+        <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
+          stroke="#a090c0" strokeWidth="1.2" opacity="0.55"/>
+      ))}
+
+      {/* ── Mouth ─────────────────────────────────── */}
+      {hope > 0.6 ? (
+        /* Big smile */
+        <path d="M90,115 Q100,124 110,115" stroke="#5a3060" strokeWidth="2.2" fill="none" strokeLinecap="round"/>
+      ) : anxiety > 0.5 ? (
+        /* Worried / trembling */
+        <path d="M90,116 Q95,112 100,116 Q105,112 110,116" stroke="#5a3060" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      ) : (
+        /* Neutral hopeful */
+        <path d="M92,115 Q100,118 108,115" stroke="#5a3060" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      )}
+
+      {/* ── Sweat drop ────────────────────────────── */}
+      {sweatDrop && (
+        <g opacity="0.85">
+          <ellipse cx="130" cy="82" rx="4" ry="6" fill="#93c5fd" opacity="0.8"/>
+          <polygon points="126,82 134,82 130,72" fill="#93c5fd" opacity="0.7"/>
+        </g>
+      )}
+
+      {/* ── Yarn tangles on body (fade as freed) ─── */}
+      {progressRatio < 0.99 && (
+        <g opacity={Math.max(0, 1 - progressRatio * 1.3)}>
+          <path d="M58,125 Q70,115 82,125 Q92,135 102,122"
+            stroke={anxiety > 0.5 ? '#f87171' : '#f472b6'}
+            strokeWidth="3.5" fill="none" strokeLinecap="round" opacity="0.55"/>
+          <path d="M118,128 Q128,118 140,128"
+            stroke="#a78bfa" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.5"/>
+          <path d="M82,158 Q94,148 106,158 Q116,166 128,154"
+            stroke="#34d399" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.45"/>
+          {progressRatio < 0.5 && (
+            <path d="M65,108 Q72,98 80,108"
+              stroke="#fb923c" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.4"/>
           )}
-        </>
-      )}
-
-      {/* ── Cheek blush ─────────────────────── */}
-      <ellipse cx="74" cy="103" rx="10" ry="6" fill="#f9a8d4" opacity={blushOpacity * 0.7} />
-      <ellipse cx="126" cy="103" rx="10" ry="6" fill="#f9a8d4" opacity={blushOpacity * 0.7} />
-
-      {/* ── Nose ───────────────────────────── */}
-      <ellipse cx="100" cy="103" rx="4" ry="3" fill={h > 0.5 ? '#f472b6' : '#9b7bb8'} />
-
-      {/* ── Whiskers ─────────────────────────── */}
-      <line x1="56" y1="100" x2="84" y2="104" stroke="#9b8dbf" strokeWidth="1.2" opacity="0.6" />
-      <line x1="54" y1="106" x2="83" y2="107" stroke="#9b8dbf" strokeWidth="1.2" opacity="0.6" />
-      <line x1="56" y1="112" x2="84" y2="110" stroke="#9b8dbf" strokeWidth="1.2" opacity="0.6" />
-      <line x1="116" y1="104" x2="144" y2="100" stroke="#9b8dbf" strokeWidth="1.2" opacity="0.6" />
-      <line x1="117" y1="107" x2="146" y2="106" stroke="#9b8dbf" strokeWidth="1.2" opacity="0.6" />
-      <line x1="116" y1="110" x2="144" y2="112" stroke="#9b8dbf" strokeWidth="1.2" opacity="0.6" />
-
-      {/* ── Mouth ─────────────────────────── */}
-      {mouthCurve === 'smile' && (
-        <>
-          <path d="M93,110 Q100,118 107,110" stroke="#5a3e6e" strokeWidth="2" fill="none" strokeLinecap="round" />
-          <path d="M93,110 Q88,113 85,110" stroke="#5a3e6e" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-          <path d="M107,110 Q112,113 115,110" stroke="#5a3e6e" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-        </>
-      )}
-      {mouthCurve === 'neutral' && (
-        <path d="M93,111 Q100,114 107,111" stroke="#5a3e6e" strokeWidth="2" fill="none" strokeLinecap="round" />
-      )}
-      {mouthCurve === 'frown' && (
-        <path d="M90,113 Q100,108 110,113" stroke="#5a3e6e" strokeWidth="2" fill="none" strokeLinecap="round" />
-      )}
-
-      {/* ── Yarn tangles (visible when sad) ── */}
-      {h < 0.8 && (
-        <g opacity={1 - h * 1.2}>
-          <path d="M60,120 Q70,112 80,122 Q90,132 100,120" stroke="#f472b6" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.6" />
-          <path d="M120,125 Q130,115 140,125" stroke="#a78bfa" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.6" />
-          <path d="M85,150 Q95,140 105,150 Q115,160 125,148" stroke="#34d399" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.5" />
         </g>
       )}
 
-      {/* ── Happy sparkles ─────────────────── */}
-      {h > 0.7 && (
-        <g opacity={(h - 0.7) * 3.3}>
-          <text x="42" y="72" fontSize="14" textAnchor="middle">✨</text>
-          <text x="158" y="68" fontSize="12" textAnchor="middle">⭐</text>
-          <text x="155" y="95" fontSize="10" textAnchor="middle">✨</text>
+      {/* ── Sparkles when making progress ─────────── */}
+      {hope > 0.3 && (
+        <g opacity={(hope - 0.3) * 1.4}>
+          <text x="40" y="76" fontSize="13">✨</text>
+          <text x="155" y="72" fontSize="11">⭐</text>
         </g>
       )}
 
-      {/* ── Fully free hearts ───────────────── */}
-      {h >= 1 && (
+      {/* ── Full joy hearts ────────────────────────── */}
+      {hope >= 0.99 && (
         <>
-          <text x="45" y="58" fontSize="16" textAnchor="middle" style={{ animation: 'floatUp 1s ease-out infinite' }}>💕</text>
-          <text x="160" y="55" fontSize="14" textAnchor="middle">💕</text>
+          <text x="38" y="62" fontSize="18">💕</text>
+          <text x="156" y="58" fontSize="15">💕</text>
+          <text x="98" y="52" fontSize="12">✨</text>
         </>
+      )}
+
+      {/* ── Timer panic — red tinge overlay ─────── */}
+      {anxiety > 0.75 && (
+        <ellipse cx="100" cy="120" rx="60" ry="70"
+          fill="#ef4444" opacity={(anxiety - 0.75) * 0.12}/>
       )}
     </svg>
   );
 }
 
-function interpolateColor(hex1, hex2, t) {
-  const r1 = parseInt(hex1.slice(1, 3), 16);
-  const g1 = parseInt(hex1.slice(3, 5), 16);
-  const b1 = parseInt(hex1.slice(5, 7), 16);
-  const r2 = parseInt(hex2.slice(1, 3), 16);
-  const g2 = parseInt(hex2.slice(3, 5), 16);
-  const b2 = parseInt(hex2.slice(5, 7), 16);
-  const r = Math.round(r1 + (r2 - r1) * t);
-  const g = Math.round(g1 + (g2 - g1) * t);
-  const b = Math.round(b1 + (b2 - b1) * t);
-  return `rgb(${r},${g},${b})`;
+function lerpColor(hex1, hex2, t) {
+  t = Math.max(0, Math.min(1, t));
+  const r1 = parseInt(hex1.slice(1,3),16), g1 = parseInt(hex1.slice(3,5),16), b1 = parseInt(hex1.slice(5,7),16);
+  const r2 = parseInt(hex2.slice(1,3),16), g2 = parseInt(hex2.slice(3,5),16), b2 = parseInt(hex2.slice(5,7),16);
+  return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
 }

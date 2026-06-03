@@ -4,15 +4,16 @@ import { LEVELS } from '../levels/levels';
 import styles from './Overlays.module.css';
 
 export function WinOverlay({ onLevelSelect }) {
-  const { stars, movesUsed, targetMoves, currentLevelIndex, nextLevel, restart } = useGameStore();
+  const { stars, movesUsed, targetMoves, timeLeft, currentLevelIndex, nextLevel, restart } = useGameStore();
   const isLast = currentLevelIndex >= LEVELS.length - 1;
+  const timeBonus = Math.ceil(timeLeft);
 
   return (
     <div className={styles.backdrop}>
       <div className={styles.modal}>
         <div className={styles.bigEmoji}>😻</div>
         <div className={styles.title}>Kitty is free!</div>
-        <div className={styles.sub}>All yarn untangled 🧶✨</div>
+        <div className={styles.sub}>All yarn untangled! 🧶</div>
 
         <div className={styles.starsRow}>
           {[1,2,3].map(s => (
@@ -20,8 +21,9 @@ export function WinOverlay({ onLevelSelect }) {
           ))}
         </div>
 
-        <div className={styles.moveStat}>
-          {movesUsed} moves · target was {targetMoves}
+        <div className={styles.stats}>
+          <div className={styles.statChip}>👣 {movesUsed} moves</div>
+          <div className={styles.statChip}>⏱ {timeBonus}s left</div>
         </div>
 
         <div className={styles.btnRow}>
@@ -43,12 +45,12 @@ export function GameOverOverlay({ onLevelSelect }) {
     <div className={styles.backdrop}>
       <div className={styles.modal}>
         <div className={styles.bigEmoji}>😿</div>
-        <div className={styles.title}>Oh no!</div>
-        <div className={styles.sub}>Too many moves... try again!</div>
+        <div className={styles.title}>Time's up!</div>
+        <div className={styles.sub}>Poor kitty... try again! 🧶</div>
 
         <div className={styles.btnRow}>
           <button className={styles.btnSec} onClick={onLevelSelect}>Levels</button>
-          <button className={styles.btnPrim} onClick={restart}>Try Again 🧶</button>
+          <button className={styles.btnPrim} onClick={restart}>Try Again 🐱</button>
         </div>
       </div>
     </div>

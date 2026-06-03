@@ -2,15 +2,36 @@ import React, { useState } from 'react';
 import { useGameStore, GAME_STATE } from './store/gameStore';
 import Grid from './components/Grid';
 import CatCharacter from './components/CatCharacter';
+import TimerRing from './components/TimerRing';
 import HUD from './components/HUD';
 import LevelSelect from './components/LevelSelect';
 import { WinOverlay, GameOverOverlay } from './components/Overlays';
 import styles from './App.module.css';
 
+const TOTAL_TIME = 15;
+
 export default function App() {
   const [screen, setScreen] = useState('select');
-  const { gameState, currentLevelIndex, levelDef, loadLevel, satisfiedCount, totalBots } = useGameStore();
-  const happiness = totalBots > 0 ? satisfiedCount / totalBots : 0;
+  const {
+    gameState, currentLevelIndex, levelDef, loadLevel,
+    satisfiedCount, totalBots, timeLeft, timerActive,
+  } = useGameStore();
+
+  const timeRatio     = timeLeft / TOTAL_TIME;
+  const progressRatio = totalBots > 0 ? satisfiedCount / totalBots : 0;
+  const anxiety       = timerActive ? Math.max(0, (1 - timeRatio) * (1 - progressRatio)) : 0;
+  const hope          = progressRatio;
+
+  // Mood label
+  const moodLabel = (() => {
+    if (!timerActive && progressRatio === 0) return '😺 Touch a yarn to start!';
+    if (progressRatio >= 1)                  return '😻 Purrrfect! All free!';
+    if (anxiety > 0.75)                      return '🙀 HURRY HURRY HURRY!!';
+    if (anxiety > 0.5)                       return '😿 I\'m running out of time...';
+    if (hope > 0.5)                          return '😸 Almost there, keep going!';
+    if (hope > 0)                            return '🐱 Yes! Keep untangling!';
+    return '😾 Help me get free...';
+  })();
 
   function handleSelectLevel(index) {
     loadLevel(index);
@@ -19,14 +40,13 @@ export default function App() {
 
   return (
     <div className={styles.root}>
-      {/* Soft background blobs */}
-      <div className={styles.blob1} />
-      <div className={styles.blob2} />
-      <div className={styles.blob3} />
+      <div className={styles.blob1}/>
+      <div className={styles.blob2}/>
+      <div className={styles.blob3}/>
 
       {screen === 'select' && (
         <div className={styles.selectScreen}>
-          <LevelSelect onSelect={handleSelectLevel} />
+          <LevelSelect onSelect={handleSelectLevel}/>
         </div>
       )}
 
@@ -35,41 +55,43 @@ export default function App() {
 
           {/* Top bar */}
           <div className={styles.topBar}>
-            <button className={styles.backBtn} onClick={() => setScreen('select')}>
-              <span>←</span> Levels
-            </button>
+            <button className={styles.backBtn} onClick={() => setScreen('select')}>← Levels</button>
             <div className={styles.levelBadge}>✦ Level {levelDef?.id ?? currentLevelIndex + 1}</div>
-            <div style={{ width: 80 }} />
+            <div style={{ width: 80 }}/>
           </div>
 
-          {/* Cat + mood */}
+          {/* Cat + timer ring */}
           <div className={styles.catZone}>
-            <div className={styles.catWrap}>
-              <CatCharacter happiness={happiness} />
-            </div>
-            <div className={styles.moodLabel}>
-              {happiness === 0 && '😿 Help me...'}
-              {happiness > 0 && happiness < 0.5 && '🙀 Keep going!'}
-              {happiness >= 0.5 && happiness < 1 && '😸 Almost free!'}
-              {happiness >= 1 && '😻 Purrrfect!'}
+            <TimerRing timeLeft={timeLeft} anxiety={anxiety} hope={hope}>
+              <CatCharacter
+                timeRatio={timeRatio}
+                progressRatio={progressRatio}
+                timerStarted={timerActive}
+              />
+            </TimerRing>
+            <div
+              className={styles.moodLabel}
+              style={{ color: anxiety > 0.6 ? '#e03060' : anxiety > 0.3 ? '#e07030' : '#c060a0' }}
+            >
+              {moodLabel}
             </div>
           </div>
 
-          {/* Grid */}
+          {/* Puzzle grid */}
           <div className={styles.gridZone}>
-            <Grid />
+            <Grid/>
           </div>
 
           {/* Bottom HUD */}
           <div className={styles.hudBar}>
-            <HUD compact />
+            <HUD/>
           </div>
 
         </div>
       )}
 
-      {screen === 'game' && gameState === GAME_STATE.LEVEL_WIN  && <WinOverlay  onLevelSelect={() => setScreen('select')} />}
-      {screen === 'game' && gameState === GAME_STATE.GAME_OVER  && <GameOverOverlay onLevelSelect={() => setScreen('select')} />}
+      {screen === 'game' && gameState === GAME_STATE.LEVEL_WIN  && <WinOverlay  onLevelSelect={() => setScreen('select')}/>}
+      {screen === 'game' && gameState === GAME_STATE.GAME_OVER  && <GameOverOverlay onLevelSelect={() => setScreen('select')}/>}
     </div>
   );
 }

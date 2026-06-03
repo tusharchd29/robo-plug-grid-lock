@@ -2,31 +2,29 @@ import React from 'react';
 import { useGameStore } from '../store/gameStore';
 import styles from './HUD.module.css';
 
-export default function HUD({ compact = false }) {
-  const { movesUsed, maxMoves, targetMoves, satisfiedCount, totalBots, undo, restart } = useGameStore();
-
-  const pct   = maxMoves > 0 ? (movesUsed / maxMoves) * 100 : 0;
+export default function HUD() {
+  const { movesUsed, targetMoves, satisfiedCount, totalBots, timeLeft, undo, restart } = useGameStore();
   const stars = movesUsed === 0 ? 0 : movesUsed <= targetMoves ? 3 : movesUsed <= targetMoves + 3 ? 2 : 1;
 
   return (
     <div className={styles.bar}>
-      {/* Yarn balls freed */}
+      {/* Yarn freed */}
       <div className={styles.stat}>
-        <span className={styles.statIcon}>🧶</span>
-        <span className={styles.statVal}>{satisfiedCount}<span className={styles.statOf}>/{totalBots}</span></span>
-        <span className={styles.statLabel}>freed</span>
+        <span className={styles.icon}>🧶</span>
+        <span className={styles.val}>{satisfiedCount}<span className={styles.of}>/{totalBots}</span></span>
+        <span className={styles.lbl}>freed</span>
       </div>
 
-      <div className={styles.divider} />
+      <div className={styles.div}/>
 
       {/* Moves */}
       <div className={styles.stat}>
-        <span className={styles.statIcon}>👣</span>
-        <span className={`${styles.statVal} ${movesUsed > targetMoves ? styles.warn : ''}`}>{movesUsed}</span>
-        <span className={styles.statLabel}>moves</span>
+        <span className={styles.icon}>👣</span>
+        <span className={`${styles.val} ${movesUsed > targetMoves ? styles.warn : ''}`}>{movesUsed}</span>
+        <span className={styles.lbl}>moves</span>
       </div>
 
-      <div className={styles.divider} />
+      <div className={styles.div}/>
 
       {/* Stars */}
       <div className={styles.stars}>
@@ -35,26 +33,12 @@ export default function HUD({ compact = false }) {
         ))}
       </div>
 
-      <div className={styles.divider} />
-
-      {/* Move bar */}
-      <div className={styles.barWrap}>
-        <div className={styles.barTrack}>
-          <div
-            className={`${styles.barFill} ${pct > 75 ? styles.danger : pct > 50 ? styles.warn2 : ''}`}
-            style={{ width: `${Math.min(pct, 100)}%` }}
-          />
-        </div>
-        <span className={styles.barLabel}>{movesUsed}/{maxMoves}</span>
-      </div>
-
-      <div className={styles.divider} />
+      {/* Spacer */}
+      <div style={{ flex: 1 }}/>
 
       {/* Buttons */}
-      <div className={styles.btns}>
-        <button className={styles.btn} onClick={undo} title="Undo">↩</button>
-        <button className={styles.btn} onClick={restart} title="Restart">↺</button>
-      </div>
+      <button className={styles.btn} onClick={undo}>↩</button>
+      <button className={styles.btn} onClick={restart}>↺</button>
     </div>
   );
 }

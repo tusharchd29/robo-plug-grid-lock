@@ -1,69 +1,46 @@
 .bar {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .stat {
   display: flex; flex-direction: column; align-items: center;
-  gap: 1px;
-  flex-shrink: 0;
+  gap: 1px; flex-shrink: 0;
 }
-.statIcon { font-size: 14px; line-height: 1; }
-.statVal {
+.icon { font-size: 15px; line-height: 1; }
+.val {
   font-family: 'Nunito', sans-serif;
-  font-size: 18px; font-weight: 900;
+  font-size: 20px; font-weight: 900;
   color: #5a3060; line-height: 1;
 }
-.statVal.warn { color: #e05080; }
-.statOf { font-size: 13px; font-weight: 700; opacity: 0.6; }
-.statLabel {
+.val.warn { color: #e05080; }
+.of { font-size: 13px; font-weight: 700; opacity: 0.55; }
+.lbl {
   font-size: 9px; font-weight: 800;
   text-transform: uppercase; letter-spacing: 0.06em;
   color: #c090b0;
 }
 
-.divider {
-  width: 1px; height: 32px;
+.div {
+  width: 1px; height: 34px;
   background: rgba(200,150,180,0.2);
   flex-shrink: 0;
 }
 
 .stars { display: flex; gap: 2px; flex-shrink: 0; }
-.star {
-  font-size: 16px; opacity: 0.15;
-  transition: opacity 0.3s, filter 0.3s;
-}
-.star.on { opacity: 1; filter: drop-shadow(0 0 4px #ffd700); }
+.star { font-size: 18px; opacity: 0.12; transition: opacity 0.3s, filter 0.3s; }
+.star.on { opacity: 1; filter: drop-shadow(0 0 5px #ffd700); }
 
-.barWrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.barTrack {
-  height: 7px; border-radius: 99px;
-  background: rgba(200,160,180,0.2);
-  overflow: hidden;
-}
-.barFill {
-  height: 100%; border-radius: 99px;
-  background: linear-gradient(90deg, #f9a8d4, #f472b6);
-  transition: width 0.35s ease, background 0.35s ease;
-}
-.barFill.warn2  { background: linear-gradient(90deg, #fde68a, #fbbf24); }
-.barFill.danger { background: linear-gradient(90deg, #fca5a5, #ef4444); }
-.barLabel {
-  font-size: 9px; font-weight: 800;
-  color: #c090b0; text-align: right;
-}
-
-.btns { display: flex; gap: 6px; flex-shrink: 0; }
 .btn {
-  width: 44px; height: 44px;
+  width: 46px; height: 46px;
   background: rgba(255,255,255,0.9);
   border: 2px solid rgba(255,180,210,0.4);
   border-radius: 14px;
-  font-size: 20px; color: #d06090;
-  cursor: pointer;
+  font-size: 22px; color: #d06090;
+  cursor: pointer; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   transition: transform 0.1s, background 0.1s;
   -webkit-tap-highlight-color: transparent;
 }
-.btn:active { transform: scale(0.92); background: white; }
+.btn:active { transform: scale(0.9); background: white; }
