@@ -22,7 +22,11 @@ export default function App() {
       <div className={`${styles.blob} ${styles.blob2}`}/>
       <div className={`${styles.blob} ${styles.blob3}`}/>
 
-      {screen === 'select' && <LevelSelect onSelect={handleSelectLevel}/>}
+      {screen === 'select' && (
+        <div className={styles.selectScreen}>
+          <LevelSelect onSelect={handleSelectLevel}/>
+        </div>
+      )}
 
       {screen === 'game' && (
         <div className={styles.gameLayout}>
