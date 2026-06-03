@@ -1,17 +1,16 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { useGameStore, GAME_STATE } from '../store/gameStore';
 import { getConduitCells, DIR } from '../engine/gameEngine';
+import YarnBall from './YarnBall';
 import styles from './Grid.module.css';
 
-const PADDING = 36;
+const PADDING = 32;
 const DRAG_THRESHOLD = 8;
 
-// Compute cell size based on available container width
 function getCellSize(cols, rows, maxW, maxH) {
   const byCol = Math.floor((maxW - PADDING * 2) / cols);
   const byRow = Math.floor((maxH - PADDING * 2) / rows);
-  const raw   = Math.min(byCol, byRow);
-  return Math.max(44, Math.min(72, raw));
+  return Math.max(44, Math.min(76, Math.min(byCol, byRow)));
 }
 
 export default function Grid() {
@@ -21,19 +20,15 @@ export default function Grid() {
     selectConduit, attemptMove,
   } = useGameStore();
 
-  const wrapRef  = useRef(null);
-  const drag     = useRef(null);
-  const cellSize = useRef(52);
-
-  // Measure container and pick cell size
+  const wrapRef = useRef(null);
+  const drag    = useRef(null);
   const [cs, setCs] = React.useState(52);
+
   useEffect(() => {
     function measure() {
       if (!wrapRef.current) return;
       const { width, height } = wrapRef.current.getBoundingClientRect();
-      const next = getCellSize(cols, rows, width, height);
-      setCs(next);
-      cellSize.current = next;
+      setCs(getCellSize(cols, rows, width, height));
     }
     measure();
     const ro = new ResizeObserver(measure);
@@ -47,41 +42,34 @@ export default function Grid() {
   const totalW = boardW + PADDING * 2;
   const totalH = boardH + PADDING * 2;
 
-  // ── Global pointer up on window ───────────────────────────────────────────
+  // Touch/pointer up
   useEffect(() => {
     function getXY(e) {
-      if (e.changedTouches && e.changedTouches.length > 0) {
-        return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
-      }
+      if (e.changedTouches?.length) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
       return { x: e.clientX, y: e.clientY };
     }
-
     function onUp(e) {
       if (!drag.current) return;
       const { conduitId, startX, startY } = drag.current;
       drag.current = null;
       const { x, y } = getXY(e);
-      const dx = x - startX;
-      const dy = y - startY;
+      const dx = x - startX, dy = y - startY;
       if (Math.max(Math.abs(dx), Math.abs(dy)) < DRAG_THRESHOLD) return;
-      let dir;
-      if (Math.abs(dx) >= Math.abs(dy)) dir = dx > 0 ? DIR.RIGHT : DIR.LEFT;
-      else                               dir = dy > 0 ? DIR.DOWN  : DIR.UP;
+      const dir = Math.abs(dx) >= Math.abs(dy)
+        ? (dx > 0 ? DIR.RIGHT : DIR.LEFT)
+        : (dy > 0 ? DIR.DOWN : DIR.UP);
       attemptMove(conduitId, dir);
     }
     window.addEventListener('pointerup', onUp);
     window.addEventListener('touchend', onUp, { passive: true });
-    return () => {
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('touchend', onUp);
-    };
+    return () => { window.removeEventListener('pointerup', onUp); window.removeEventListener('touchend', onUp); };
   }, [attemptMove]);
 
-  // ── Keyboard ──────────────────────────────────────────────────────────────
+  // Keyboard
   useEffect(() => {
     function onKey(e) {
       if (!selectedConduitId || gameState !== GAME_STATE.IDLE) return;
-      const map = { ArrowRight:DIR.RIGHT, ArrowLeft:DIR.LEFT, ArrowDown:DIR.DOWN, ArrowUp:DIR.UP };
+      const map = { ArrowRight: DIR.RIGHT, ArrowLeft: DIR.LEFT, ArrowDown: DIR.DOWN, ArrowUp: DIR.UP };
       if (map[e.key]) { e.preventDefault(); attemptMove(selectedConduitId, map[e.key]); }
     }
     window.addEventListener('keydown', onKey);
@@ -92,53 +80,78 @@ export default function Grid() {
     if (gameState !== GAME_STATE.IDLE) return;
     e.preventDefault(); e.stopPropagation();
     selectConduit(conduit.id);
-    let startX = e.clientX, startY = e.clientY;
-    if (e.touches && e.touches.length > 0) {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-    }
+    const startX = e.touches?.[0]?.clientX ?? e.clientX;
+    const startY = e.touches?.[0]?.clientY ?? e.clientY;
     drag.current = { conduitId: conduit.id, startX, startY };
   }, [gameState, selectConduit]);
 
   const onBoardDown = useCallback((e) => {
-    if (!e.target.closest('[data-conduit]')) {
-      selectConduit(null); drag.current = null;
-    }
+    if (!e.target.closest('[data-conduit]')) { selectConduit(null); drag.current = null; }
   }, [selectConduit]);
 
   function renderConduits() {
     return conduits.map(conduit => {
-      const cells      = getConduitCells(conduit);
+      const cells = getConduitCells(conduit);
       const isSelected = selectedConduitId === conduit.id;
       const isNudging  = nudgeConduitId === conduit.id;
-      const minR = Math.min(...cells.map(([r])=>r));
-      const minC = Math.min(...cells.map(([,c])=>c));
-      const maxR = Math.max(...cells.map(([r])=>r));
-      const maxC = Math.max(...cells.map(([,c])=>c));
-      const x = minC*CELL + PADDING + 3;
-      const y = minR*CELL + PADDING + 3;
-      const w = (maxC-minC+1)*CELL - 6;
-      const h = (maxR-minR+1)*CELL - 6;
+      const minR = Math.min(...cells.map(([r]) => r));
+      const minC = Math.min(...cells.map(([, c]) => c));
+      const maxR = Math.max(...cells.map(([r]) => r));
+      const maxC = Math.max(...cells.map(([, c]) => c));
+      const x = minC * CELL + PADDING + 4;
+      const y = minR * CELL + PADDING + 4;
+      const w = (maxC - minC + 1) * CELL - 8;
+      const h = (maxR - minR + 1) * CELL - 8;
+      const isH = conduit.axis === 'H';
 
       return (
-        <div key={conduit.id} data-conduit={conduit.id}
-          className={[styles.conduit, isSelected?styles.selected:'', isNudging?styles.nudge:'',
-            conduit.axis==='H'?styles.horizontal:styles.vertical].join(' ')}
-          style={{ left:x, top:y, width:w, height:h,
-            '--conduit-color': conduit.color,
-            '--conduit-color-light': conduit.color+'33' }}
+        <div
+          key={conduit.id}
+          data-conduit={conduit.id}
+          className={[
+            styles.yarn,
+            isH ? styles.yarnH : styles.yarnV,
+            isSelected ? styles.selected : '',
+            isNudging ? styles.nudge : '',
+          ].join(' ')}
+          style={{
+            left: x, top: y, width: w, height: h,
+            '--yarn-color': conduit.color,
+            '--yarn-color-mid': conduit.color + 'cc',
+            '--yarn-color-light': conduit.color + '44',
+          }}
           onPointerDown={e => onConduitDown(e, conduit)}
         >
-          <div className={styles.conduitInner}>
-            <div className={styles.conduitLine}/>
-            <div className={styles.conduitLine}/>
-            <div className={styles.conduitEndcap}/>
-            <div className={styles.conduitEndcap}/>
+          {/* Yarn strand body */}
+          <div className={styles.yarnBody}>
+            <div className={styles.yarnShadow} />
+            <div className={styles.yarnMain} />
+            <div className={styles.yarnSheen} />
+            {/* Twist marks */}
+            {Array.from({ length: Math.max(1, Math.floor((isH ? w : h) / 18)) }).map((_, i) => (
+              <div key={i} className={isH ? styles.twistH : styles.twistV}
+                style={{ [isH ? 'left' : 'top']: `${12 + i * 18}px` }} />
+            ))}
           </div>
+          {/* End caps */}
+          <div className={isH ? styles.capLeft : styles.capTop} />
+          <div className={isH ? styles.capRight : styles.capBottom} />
+          {/* Selected glow */}
+          {isSelected && <div className={styles.selectedGlow} />}
+          {/* Direction arrows when selected */}
           {isSelected && (
-            <div className={styles.arrowHints} aria-hidden="true">
-              {conduit.axis==='H' && <><span className={`${styles.arrow} ${styles.arrowLeft}`}>◀</span><span className={`${styles.arrow} ${styles.arrowRight}`}>▶</span></>}
-              {conduit.axis==='V' && <><span className={`${styles.arrow} ${styles.arrowUp}`}>▲</span><span className={`${styles.arrow} ${styles.arrowDown}`}>▼</span></>}
+            <div className={styles.arrows}>
+              {isH ? (
+                <>
+                  <span className={`${styles.arrow} ${styles.arrowL}`}>◂</span>
+                  <span className={`${styles.arrow} ${styles.arrowR}`}>▸</span>
+                </>
+              ) : (
+                <>
+                  <span className={`${styles.arrow} ${styles.arrowU}`}>▴</span>
+                  <span className={`${styles.arrow} ${styles.arrowD}`}>▾</span>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -150,53 +163,49 @@ export default function Grid() {
     return exits.map(exit => {
       const { id, color, row, col, side, satisfied } = exit;
       const isAnimating = animatingRobotId === id;
-      const RS = Math.min(CELL - 6, 38); // robot size
+      const ballSize = Math.min(CELL - 4, 40);
+      const half = (CELL - ballSize) / 2;
       let style = {};
-      const rOff = (CELL - RS) / 2;
-      if (side==='right')  style = { left: boardW+PADDING+4,         top: row*CELL+PADDING+rOff };
-      if (side==='left')   style = { left: 4,                        top: row*CELL+PADDING+rOff };
-      if (side==='top')    style = { left: col*CELL+PADDING+rOff,    top: 4 };
-      if (side==='bottom') style = { left: col*CELL+PADDING+rOff,    top: boardH+PADDING+4 };
+      if (side === 'right')  style = { left: boardW + PADDING + 2,      top: row * CELL + PADDING + half };
+      if (side === 'left')   style = { left: 2,                          top: row * CELL + PADDING + half };
+      if (side === 'top')    style = { left: col * CELL + PADDING + half, top: 2 };
+      if (side === 'bottom') style = { left: col * CELL + PADDING + half, top: boardH + PADDING + 2 };
       return (
-        <div key={id}
-          className={[styles.robot, satisfied?styles.satisfied:'', isAnimating?styles.booting:''].join(' ')}
-          style={{ ...style, '--robot-color':color, width:RS, height:RS, fontSize: Math.max(7, RS*0.24) }}
-        >
-          <div className={styles.robotFace}>{satisfied?'^_^':isAnimating?'O_O':'>_<'}</div>
-          <div className={styles.robotColorDot} style={{ background:color }}/>
+        <div key={id} className={styles.exitSlot} style={{ ...style, position: 'absolute' }}>
+          <YarnBall color={color} satisfied={satisfied} size={ballSize} animating={isAnimating} />
         </div>
       );
     });
   }
 
   function renderDeadZones() {
-    return deadZones.map(([r,c],i) => (
+    return deadZones.map(([r, c], i) => (
       <div key={i} className={styles.deadZone}
-        style={{ left:c*CELL+PADDING, top:r*CELL+PADDING, width:CELL, height:CELL }}>
-        <span className={styles.deadX}>✕</span>
+        style={{ left: c * CELL + PADDING, top: r * CELL + PADDING, width: CELL, height: CELL }}>
+        <span className={styles.deadX}>🐾</span>
       </div>
     ));
   }
 
   function renderGridLines() {
     const lines = [];
-    for (let r=0; r<=rows; r++)
-      lines.push(<div key={`h${r}`} className={styles.gridLineH}
-        style={{ top:r*CELL+PADDING, left:PADDING, width:boardW }}/>);
-    for (let c=0; c<=cols; c++)
-      lines.push(<div key={`v${c}`} className={styles.gridLineV}
-        style={{ left:c*CELL+PADDING, top:PADDING, height:boardH }}/>);
+    for (let r = 0; r <= rows; r++)
+      lines.push(<div key={`h${r}`} className={styles.lineH}
+        style={{ top: r * CELL + PADDING, left: PADDING, width: boardW }} />);
+    for (let c = 0; c <= cols; c++)
+      lines.push(<div key={`v${c}`} className={styles.lineV}
+        style={{ left: c * CELL + PADDING, top: PADDING, height: boardH }} />);
     return lines;
   }
 
   return (
     <div ref={wrapRef} className={styles.outerWrap}>
       <div className={styles.board}
-        style={{ width:totalW, height:totalH, touchAction:'none' }}
+        style={{ width: totalW, height: totalH, touchAction: 'none' }}
         onPointerDown={onBoardDown}
       >
-        <div className={styles.gridBorder}
-          style={{ left:PADDING, top:PADDING, width:boardW, height:boardH }}/>
+        <div className={styles.gridBg}
+          style={{ left: PADDING, top: PADDING, width: boardW, height: boardH }} />
         {renderGridLines()}
         {renderDeadZones()}
         {renderConduits()}

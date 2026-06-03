@@ -1,63 +1,79 @@
 .backdrop {
-  position: fixed; inset:0;
-  background:rgba(240,236,255,0.8);
-  backdrop-filter:blur(6px);
-  display:flex;align-items:center;justify-content:center;
-  z-index:100;
-  animation:fadeIn 0.2s ease;
-  padding: 16px;
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(90,30,60,0.45);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
 }
-@keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
 .modal {
-  background:rgba(255,255,255,0.95);
-  border:2px solid rgba(255,255,255,0.98);
-  border-radius:22px;
-  padding:28px 24px;
-  text-align:center;
-  width:100%;
-  max-width:300px;
-  animation:popIn 0.32s cubic-bezier(0.22,1,0.36,1);
+  background: #fff8f3;
+  border-radius: 28px;
+  border: 3px solid rgba(255,180,220,0.5);
+  padding: 32px 28px 28px;
+  width: 100%;
+  max-width: 320px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 12px;
+  box-shadow: 0 16px 48px rgba(160,80,120,0.25);
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
 }
-@keyframes popIn { from{transform:scale(0.88);opacity:0} to{transform:scale(1);opacity:1} }
-
-.winEmoji,.overEmoji {
-  font-family:'Space Mono',monospace;
-  font-size:32px;font-weight:700;margin-bottom:6px;
+@keyframes popIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
 }
-.winEmoji  { color:#f59e0b; }
-.overEmoji { color:#e86b9a; }
 
-.winTitle,.overTitle {
-  font-family:'Space Mono',monospace;
-  font-size:20px;font-weight:700;color:#4a3470;margin-bottom:4px;
+.bigEmoji { font-size: 56px; line-height: 1; }
+
+.title {
+  font-family: 'Nunito', sans-serif;
+  font-size: 26px; font-weight: 900;
+  color: #5a3060; text-align: center;
 }
-.overTitle { color:#e86b9a; }
-.winSub,.overSub { font-size:12px;color:#9b8dbf;margin-bottom:16px; }
-
-.starsRow { display:flex;justify-content:center;gap:6px;margin-bottom:10px; }
-.bigStar { font-size:28px;opacity:0.18;transition:opacity 0.3s,filter 0.3s; }
-.bigStar.on { opacity:1;filter:drop-shadow(0 0 4px #ffd966);animation:starPop 0.5s cubic-bezier(0.22,1,0.36,1); }
-@keyframes starPop { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
-
-.moveStat { font-family:'Space Mono',monospace;font-size:10px;color:#a89bc2;margin-bottom:20px; }
-
-.btnRow { display:flex;gap:8px;justify-content:center;flex-wrap:wrap; }
-.btnPrimary {
-  padding:10px 20px;background:#c084fc;border:none;border-radius:13px;
-  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:white;
-  cursor:pointer;transition:background 0.15s,transform 0.1s;
-  -webkit-tap-highlight-color:transparent;
+.sub {
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px; font-weight: 700;
+  color: #c060a0; text-align: center;
 }
-.btnPrimary:hover  { background:#a855f7; }
-.btnPrimary:active { transform:scale(0.96); }
-.btnSecondary {
-  padding:10px 16px;
-  background:rgba(255,255,255,0.85);
-  border:1.5px solid rgba(160,120,255,0.22);
-  border-radius:13px;
-  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:#7c5cbf;
-  cursor:pointer;transition:background 0.15s,transform 0.1s;
-  -webkit-tap-highlight-color:transparent;
+
+.starsRow { display: flex; gap: 8px; }
+.bigStar {
+  font-size: 32px; opacity: 0.15;
+  transition: opacity 0.4s, filter 0.4s;
 }
-.btnSecondary:active { transform:scale(0.96); }
+.bigStar.on { opacity: 1; filter: drop-shadow(0 0 8px #ffd700); }
+
+.moveStat {
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px; font-weight: 700;
+  color: #c090b0;
+}
+
+.btnRow { display: flex; gap: 8px; width: 100%; }
+
+.btnSec {
+  flex: 1; padding: 12px 8px;
+  background: rgba(255,255,255,0.9);
+  border: 2px solid rgba(255,180,210,0.5);
+  border-radius: 16px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px; font-weight: 800;
+  color: #c060a0; cursor: pointer;
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btnSec:active { transform: scale(0.96); }
+
+.btnPrim {
+  flex: 1.5; padding: 12px 8px;
+  background: linear-gradient(135deg, #f472b6, #e040a0);
+  border: none;
+  border-radius: 16px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px; font-weight: 800;
+  color: white; cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: 0 4px 14px rgba(240,70,160,0.35);
+  -webkit-tap-highlight-color: transparent;
+}
+.btnPrim:active { transform: scale(0.96); box-shadow: none; }

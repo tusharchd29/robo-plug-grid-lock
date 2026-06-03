@@ -10,9 +10,9 @@ export function WinOverlay({ onLevelSelect }) {
   return (
     <div className={styles.backdrop}>
       <div className={styles.modal}>
-        <div className={styles.winEmoji}>^_^</div>
-        <div className={styles.winTitle}>Bot Freed!</div>
-        <div className={styles.winSub}>All wool removed successfully</div>
+        <div className={styles.bigEmoji}>😻</div>
+        <div className={styles.title}>Kitty is free!</div>
+        <div className={styles.sub}>All yarn untangled 🧶✨</div>
 
         <div className={styles.starsRow}>
           {[1,2,3].map(s => (
@@ -25,9 +25,11 @@ export function WinOverlay({ onLevelSelect }) {
         </div>
 
         <div className={styles.btnRow}>
-          <button className={styles.btnSecondary} onClick={onLevelSelect}>Levels</button>
-          <button className={styles.btnSecondary} onClick={restart}>Retry</button>
-          {!isLast && <button className={styles.btnPrimary} onClick={nextLevel}>Next ▶</button>}
+          <button className={styles.btnSec} onClick={onLevelSelect}>Levels</button>
+          <button className={styles.btnSec} onClick={restart}>Retry</button>
+          {!isLast && (
+            <button className={styles.btnPrim} onClick={nextLevel}>Next ▶</button>
+          )}
         </div>
       </div>
     </div>
@@ -36,15 +38,17 @@ export function WinOverlay({ onLevelSelect }) {
 
 export function GameOverOverlay({ onLevelSelect }) {
   const { restart } = useGameStore();
+
   return (
     <div className={styles.backdrop}>
       <div className={styles.modal}>
-        <div className={styles.overEmoji}>X_X</div>
-        <div className={styles.overTitle}>Gridlocked!</div>
-        <div className={styles.overSub}>Ran out of moves. Recalibrate and retry.</div>
+        <div className={styles.bigEmoji}>😿</div>
+        <div className={styles.title}>Oh no!</div>
+        <div className={styles.sub}>Too many moves... try again!</div>
+
         <div className={styles.btnRow}>
-          <button className={styles.btnSecondary} onClick={onLevelSelect}>Levels</button>
-          <button className={styles.btnPrimary} onClick={restart}>Try Again</button>
+          <button className={styles.btnSec} onClick={onLevelSelect}>Levels</button>
+          <button className={styles.btnPrim} onClick={restart}>Try Again 🧶</button>
         </div>
       </div>
     </div>

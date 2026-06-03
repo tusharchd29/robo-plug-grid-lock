@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useGameStore, GAME_STATE } from './store/gameStore';
 import Grid from './components/Grid';
-import CentralBot from './components/CentralBot';
+import CatCharacter from './components/CatCharacter';
 import HUD from './components/HUD';
 import LevelSelect from './components/LevelSelect';
 import { WinOverlay, GameOverOverlay } from './components/Overlays';
@@ -9,7 +9,8 @@ import styles from './App.module.css';
 
 export default function App() {
   const [screen, setScreen] = useState('select');
-  const { gameState, currentLevelIndex, levelDef, loadLevel } = useGameStore();
+  const { gameState, currentLevelIndex, levelDef, loadLevel, satisfiedCount, totalBots } = useGameStore();
+  const happiness = totalBots > 0 ? satisfiedCount / totalBots : 0;
 
   function handleSelectLevel(index) {
     loadLevel(index);
@@ -18,49 +19,57 @@ export default function App() {
 
   return (
     <div className={styles.root}>
-      <div className={`${styles.blob} ${styles.blob1}`}/>
-      <div className={`${styles.blob} ${styles.blob2}`}/>
-      <div className={`${styles.blob} ${styles.blob3}`}/>
+      {/* Soft background blobs */}
+      <div className={styles.blob1} />
+      <div className={styles.blob2} />
+      <div className={styles.blob3} />
 
       {screen === 'select' && (
         <div className={styles.selectScreen}>
-          <LevelSelect onSelect={handleSelectLevel}/>
+          <LevelSelect onSelect={handleSelectLevel} />
         </div>
       )}
 
       {screen === 'game' && (
         <div className={styles.gameLayout}>
 
-          {/* ── Top bar ─────────────────────────────── */}
+          {/* Top bar */}
           <div className={styles.topBar}>
-            <button className={styles.backBtn} onClick={() => setScreen('select')}>← Levels</button>
-            <div className={styles.levelBadge}>Level {levelDef?.id || currentLevelIndex + 1}</div>
-            <div className={styles.topSpacer}/>
+            <button className={styles.backBtn} onClick={() => setScreen('select')}>
+              <span>←</span> Levels
+            </button>
+            <div className={styles.levelBadge}>✦ Level {levelDef?.id ?? currentLevelIndex + 1}</div>
+            <div style={{ width: 80 }} />
           </div>
 
-          {/* ── Desktop: sidebar + grid ─────────────── */}
-          <div className={styles.desktopArea}>
-            <div className={styles.sidebar}>
-              <HUD/>
-              <CentralBot/>
+          {/* Cat + mood */}
+          <div className={styles.catZone}>
+            <div className={styles.catWrap}>
+              <CatCharacter happiness={happiness} />
             </div>
-            <div className={styles.gridArea}><Grid/></div>
+            <div className={styles.moodLabel}>
+              {happiness === 0 && '😿 Help me...'}
+              {happiness > 0 && happiness < 0.5 && '🙀 Keep going!'}
+              {happiness >= 0.5 && happiness < 1 && '😸 Almost free!'}
+              {happiness >= 1 && '😻 Purrrfect!'}
+            </div>
           </div>
 
-          {/* ── Mobile: grid fills screen ───────────── */}
-          <div className={styles.mobileGrid}><Grid/></div>
+          {/* Grid */}
+          <div className={styles.gridZone}>
+            <Grid />
+          </div>
 
-          {/* ── Mobile: bottom HUD strip ────────────── */}
-          <div className={styles.mobileHUD}>
-            <HUD compact/>
-            <CentralBot compact/>
+          {/* Bottom HUD */}
+          <div className={styles.hudBar}>
+            <HUD compact />
           </div>
 
         </div>
       )}
 
-      {screen === 'game' && gameState === GAME_STATE.LEVEL_WIN  && <WinOverlay  onLevelSelect={() => setScreen('select')}/>}
-      {screen === 'game' && gameState === GAME_STATE.GAME_OVER  && <GameOverOverlay onLevelSelect={() => setScreen('select')}/>}
+      {screen === 'game' && gameState === GAME_STATE.LEVEL_WIN  && <WinOverlay  onLevelSelect={() => setScreen('select')} />}
+      {screen === 'game' && gameState === GAME_STATE.GAME_OVER  && <GameOverOverlay onLevelSelect={() => setScreen('select')} />}
     </div>
   );
 }

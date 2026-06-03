@@ -1,127 +1,123 @@
+/* ── Root ───────────────────────────────── */
 .root {
-  height: 100%;
   height: 100dvh;
-  background: #f0ecff;
+  background: #fff8f3;
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  font-family: 'Nunito', 'Quicksand', sans-serif;
 }
 
-/* ── Blobs ──────────────────────────────────── */
-.blob { position:absolute; z-index:0; pointer-events:none; }
-.blob1 { width:280px;height:280px;background:#ffd6f0;top:-70px;left:-70px;border-radius:60% 40% 55% 45%;opacity:0.5; }
-.blob2 { width:220px;height:220px;background:#d6f0ff;bottom:10px;right:-40px;border-radius:45% 55% 40% 60%;opacity:0.5; }
-.blob3 { width:150px;height:150px;background:#d6ffd6;top:45%;left:2%;border-radius:50%;opacity:0.4; }
+/* ── Background blobs ───────────────────── */
+.blob1 {
+  position: absolute; pointer-events: none; z-index: 0;
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, #ffd6eb 0%, transparent 70%);
+  top: -80px; left: -80px;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+.blob2 {
+  position: absolute; pointer-events: none; z-index: 0;
+  width: 260px; height: 260px;
+  background: radial-gradient(circle, #d6f0ff 0%, transparent 70%);
+  bottom: -40px; right: -60px;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+.blob3 {
+  position: absolute; pointer-events: none; z-index: 0;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, #e8d6ff 0%, transparent 70%);
+  top: 40%; left: -20px;
+  border-radius: 50%;
+  opacity: 0.4;
+}
 
-/* level select fills full height */
+/* ── Select screen ──────────────────────── */
 .selectScreen {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ── Game layout ────────────────────────────── */
-.gameLayout {
-  position: relative; z-index:1;
+  position: relative; z-index: 1;
+  flex: 1; min-height: 0;
   display: flex; flex-direction: column;
-  height: 100%; 
-  overflow: hidden;
-  flex: 1;
-  min-height: 0;
 }
 
-/* ── Top bar ────────────────────────────────── */
+/* ── Game layout ────────────────────────── */
+.gameLayout {
+  position: relative; z-index: 1;
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Top bar ────────────────────────────── */
 .topBar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 14px 4px; flex-shrink: 0;
+  padding: 10px 14px 6px;
+  flex-shrink: 0;
 }
 .backBtn {
-  background:rgba(255,255,255,0.78);
-  border:1.5px solid rgba(160,120,255,0.22);
-  border-radius:20px; padding:5px 13px;
-  font-family:'Space Grotesk',sans-serif;
-  font-size:12px; font-weight:700; color:#7c5cbf; cursor:pointer;
-  transition:background 0.15s; white-space:nowrap;
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,0.85);
+  border: 2px solid rgba(255,180,200,0.4);
+  border-radius: 50px;
+  padding: 6px 14px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px; font-weight: 800;
+  color: #d06090;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
-.backBtn:hover { background:rgba(255,255,255,0.95); }
+.backBtn:active { transform: scale(0.95); background: white; }
+
 .levelBadge {
-  font-family:'Space Mono',monospace;
-  font-size:11px; font-weight:700;
-  background:rgba(255,255,255,0.78);
-  border:1.5px solid rgba(160,120,255,0.2);
-  border-radius:20px; padding:5px 13px;
-  color:#7c5cbf; letter-spacing:0.05em;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px; font-weight: 800;
+  background: rgba(255,255,255,0.85);
+  border: 2px solid rgba(255,180,200,0.4);
+  border-radius: 50px;
+  padding: 6px 14px;
+  color: #d06090;
+  letter-spacing: 0.03em;
 }
-.topSpacer { width:70px; }
 
-/* ════════════════════════════════════════════════
-   DESKTOP  (> 620px)
-   Sidebar left, grid right
-════════════════════════════════════════════════ */
-.desktopArea {
-  display: flex;
+/* ── Cat zone ───────────────────────────── */
+.catZone {
+  flex-shrink: 0;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 0 20px 4px;
+  height: 22vh;
+  min-height: 120px;
+  max-height: 200px;
+}
+.catWrap {
   flex: 1; min-height: 0;
-  gap: 10px;
-  padding: 0 12px 12px;
+  width: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+.moodLabel {
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px; font-weight: 800;
+  color: #c06080;
+  text-align: center;
+  flex-shrink: 0;
+  padding-bottom: 2px;
+}
+
+/* ── Grid zone ──────────────────────────── */
+.gridZone {
+  flex: 1; min-height: 0;
   overflow: hidden;
-}
-.sidebar {
-  display: flex; flex-direction:column;
-  gap:8px; flex-shrink:0; width:170px;
-  overflow-y:auto; padding-bottom:4px;
-}
-.gridArea {
-  flex:1; min-width:0;
-  overflow:auto;
-  display:flex; align-items:flex-start; justify-content:center;
+  padding: 0 8px;
 }
 
-/* Hide mobile slots on desktop */
-.mobileGrid, .mobileHUD { display:none; }
-
-/* ════════════════════════════════════════════════
-   MOBILE  (≤ 620px)
-   Grid fills remaining space, HUD at bottom
-════════════════════════════════════════════════ */
-@media (max-width: 620px) {
-  /* Hide desktop area */
-  .desktopArea { display:none; }
-
-  /* Grid takes all remaining space */
-  .mobileGrid {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-    padding: 0 4px;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* Bottom HUD strip — taller, easier to tap */
-  .mobileHUD {
-    display: flex;
-    flex-shrink: 0;
-    gap: 8px;
-    padding: 8px 10px 12px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-    background: rgba(255,255,255,0.7);
-    border-top: 1px solid rgba(160,130,220,0.15);
-    align-items: stretch;
-    min-height: 72px;
-  }
-
-  /* Top bar tighter on mobile */
-  .topBar {
-    padding: 10px 12px 6px;
-  }
-
-  .backBtn, .levelBadge {
-    font-size: 13px;
-    padding: 7px 14px;
-  }
+/* ── Bottom HUD bar ─────────────────────── */
+.hudBar {
+  flex-shrink: 0;
+  padding: 6px 12px max(10px, env(safe-area-inset-bottom));
+  background: rgba(255,255,255,0.75);
+  border-top: 2px solid rgba(255,200,220,0.3);
+  backdrop-filter: blur(8px);
 }
