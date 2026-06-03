@@ -26,8 +26,10 @@ export default function App() {
   const moodLabel = (() => {
     if (!timerActive && progressRatio === 0) return '😺 Touch a yarn to start!';
     if (progressRatio >= 1)                  return '😻 Purrrfect! All free!';
-    if (anxiety > 0.75)                      return '🙀 HURRY HURRY HURRY!!';
-    if (anxiety > 0.5)                       return '😿 I\'m running out of time...';
+    if (anxiety > 0.85)                      return '🙀 GET ME OUT GET ME OUT!!';
+    if (anxiety > 0.65)                      return '😾 I am SO done with this!!';
+    if (anxiety > 0.35)                      return '😿 Hurry... I\'m getting nervous...';
+    if (anxiety > 0.05)                      return '😼 Hmm... tick tock...';
     if (hope > 0.5)                          return '😸 Almost there, keep going!';
     if (hope > 0)                            return '🐱 Yes! Keep untangling!';
     return '😾 Help me get free...';
