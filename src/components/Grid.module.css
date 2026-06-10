@@ -182,3 +182,58 @@
   z-index: 5;
   pointer-events: none;
 }
+
+/* ─── Power-up: pending select — all conduits shimmer invitingly ─── */
+.powerTarget {
+  cursor: crosshair !important;
+  filter: brightness(1.1);
+}
+.powerTarget::after {
+  content: '';
+  position: absolute; inset: -3px;
+  border-radius: inherit;
+  border: 2px dashed rgba(251,191,36,0.6);
+  pointer-events: none;
+  animation: dashedSpin 2s linear infinite;
+}
+@keyframes dashedSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Ghost armed: pulsing gold ring on the chosen conduit ──────── */
+.ghostArmed {
+  filter: brightness(1.15) saturate(1.2);
+}
+.ghostGlow {
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  border: 3px solid #fbbf24;
+  box-shadow: 0 0 0 4px rgba(251,191,36,0.25), inset 0 0 12px rgba(251,191,36,0.2);
+  pointer-events: none;
+  animation: ghostPulse 0.7s ease-in-out infinite alternate;
+}
+@keyframes ghostPulse {
+  from { box-shadow: 0 0 0 2px rgba(251,191,36,0.2), inset 0 0 8px rgba(251,191,36,0.15); }
+  to   { box-shadow: 0 0 0 6px rgba(251,191,36,0.4), inset 0 0 18px rgba(251,191,36,0.3); }
+}
+
+.ghostBolt {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  filter: drop-shadow(0 0 6px #fbbf24);
+  animation: boltBounce 0.6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 10;
+}
+@keyframes boltBounce {
+  from { transform: translate(-50%, -50%) scale(0.9); }
+  to   { transform: translate(-50%, -50%) scale(1.15); }
+}
+
+/* Gold arrows for ghost mode */
+.arrowsGhost .arrow {
+  color: #fbbf24 !important;
+  filter: drop-shadow(0 0 4px #fbbf24);
+}
