@@ -47,16 +47,13 @@ export function canMoveInDir(conduit, dir) {
   return dir === DIR.UP || dir === DIR.DOWN;
 }
 
-// Compute how many steps a conduit can slide.
-// Exits live just outside the grid boundary (row=-1, row=rows, col=-1, col=cols).
-// Returns { steps, exitsAt } — exitsAt is the exit object or null.
+// Compute how many steps a conduit can slide (normal mode).
 export function calcMaxSteps(conduit, dir, grid, cols, rows, exits) {
   if (!canMoveInDir(conduit, dir)) return { steps: 0, exitsAt: null };
 
   const { dr, dc } = dirDelta(dir);
   const cells = getConduitCells(conduit);
 
-  // Leading edge cell (front in direction of travel)
   const leadCell = (dir === DIR.RIGHT || dir === DIR.DOWN)
     ? cells[cells.length - 1]
     : cells[0];
@@ -70,7 +67,6 @@ export function calcMaxSteps(conduit, dir, grid, cols, rows, exits) {
     const outOfBounds = nextR < 0 || nextR >= rows || nextC < 0 || nextC >= cols;
 
     if (outOfBounds) {
-      // Is there a matching unsatisfied exit just beyond this edge?
       const exitHere = exits.find(e =>
         !e.satisfied && e.row === nextR && e.col === nextC && e.color === conduit.color
       );
@@ -78,11 +74,44 @@ export function calcMaxSteps(conduit, dir, grid, cols, rows, exits) {
       return { steps, exitsAt: null };
     }
 
-    // Inside grid — check for blocker
     const cell = grid[nextR][nextC];
     if (cell !== CELL.EMPTY) return { steps, exitsAt: null };
 
     steps++;
+  }
+}
+
+// Ghost mode: conduit ignores all blockers and dead zones — goes straight to its exit.
+// Returns { steps, exitsAt } where exitsAt is always the matching exit, or null if no exit
+// is reachable in that direction regardless of obstacles.
+export function calcGhostSteps(conduit, dir, grid, cols, rows, exits) {
+  if (!canMoveInDir(conduit, dir)) return { steps: 0, exitsAt: null };
+
+  const { dr, dc } = dirDelta(dir);
+  const cells = getConduitCells(conduit);
+
+  const leadCell = (dir === DIR.RIGHT || dir === DIR.DOWN)
+    ? cells[cells.length - 1]
+    : cells[0];
+
+  // Walk until we find the matching exit just outside the grid
+  let steps = 0;
+  while (true) {
+    steps++;
+    const nextR = leadCell[0] + dr * steps;
+    const nextC = leadCell[1] + dc * steps;
+    const outOfBounds = nextR < 0 || nextR >= rows || nextC < 0 || nextC >= cols;
+
+    if (outOfBounds) {
+      const exitHere = exits.find(e =>
+        !e.satisfied && e.row === nextR && e.col === nextC && e.color === conduit.color
+      );
+      if (exitHere) return { steps, exitsAt: exitHere };
+      // Went out of bounds but no matching exit — keep scanning one step further
+      // Actually out of bounds means done, no exit found
+      return { steps: 0, exitsAt: null };
+    }
+    // In ghost mode we just keep going through obstacles
   }
 }
 
@@ -105,7 +134,7 @@ export function moveConduit(conduit, steps, dir, grid) {
     headCol: conduit.headCol + dc * steps,
   };
 
-  // Write new cells
+  // Write new cells (only within bounds)
   getConduitCells(newConduit).forEach(([r, c]) => {
     if (r >= 0 && r < newGrid.length && c >= 0 && c < newGrid[0].length)
       newGrid[r][c] = newConduit.id;
