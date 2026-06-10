@@ -1,10 +1,16 @@
 import React from 'react';
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, POWER_STATE } from '../store/gameStore';
 import styles from './HUD.module.css';
 
 export default function HUD() {
-  const { movesUsed, targetMoves, satisfiedCount, totalBots, timeLeft, undo, restart } = useGameStore();
+  const {
+    movesUsed, targetMoves, satisfiedCount, totalBots,
+    timeLeft, undo, restart,
+    powerCharges, powerState, activatePower,
+  } = useGameStore();
+
   const stars = movesUsed === 0 ? 0 : movesUsed <= targetMoves ? 3 : movesUsed <= targetMoves + 3 ? 2 : 1;
+  const isPowerPending = powerState === POWER_STATE.PENDING_SELECT || powerState === POWER_STATE.GHOST_ARMED;
 
   return (
     <div className={styles.bar}>
@@ -35,6 +41,20 @@ export default function HUD() {
 
       {/* Spacer */}
       <div style={{ flex: 1 }}/>
+
+      {/* ⚡ Power charges */}
+      <button
+        className={`${styles.powerBtn} ${isPowerPending ? styles.powerBtnActive : ''} ${powerCharges === 0 ? styles.powerBtnDepleted : ''}`}
+        onClick={activatePower}
+        disabled={powerCharges === 0}
+        title={powerCharges === 0 ? 'No power charges left' : 'Activate ghost mode'}
+      >
+        <span className={styles.powerBolts}>
+          {[0,1,2].map(i => (
+            <span key={i} className={`${styles.bolt} ${i < powerCharges ? styles.boltOn : styles.boltOff}`}>⚡</span>
+          ))}
+        </span>
+      </button>
 
       {/* Buttons */}
       <button className={styles.btn} onClick={undo}>↩</button>
