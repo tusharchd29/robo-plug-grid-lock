@@ -5,7 +5,7 @@ import CatCharacter from './components/CatCharacter';
 import TimerRing from './components/TimerRing';
 import HUD from './components/HUD';
 import LevelSelect from './components/LevelSelect';
-import { WinOverlay, GameOverOverlay } from './components/Overlays';
+import { WinOverlay, GameOverOverlay, MathChallengeOverlay } from './components/Overlays';
 import styles from './App.module.css';
 
 const TOTAL_TIME = 15;
@@ -22,7 +22,6 @@ export default function App() {
   const anxiety       = timerActive ? Math.max(0, (1 - timeRatio) * (1 - progressRatio)) : 0;
   const hope          = progressRatio;
 
-  // Mood label
   const moodLabel = (() => {
     if (!timerActive && progressRatio === 0) return '😺 Touch a yarn to start!';
     if (progressRatio >= 1)                  return '😻 Purrrfect! All free!';
@@ -94,6 +93,9 @@ export default function App() {
 
       {screen === 'game' && gameState === GAME_STATE.LEVEL_WIN  && <WinOverlay  onLevelSelect={() => setScreen('select')}/>}
       {screen === 'game' && gameState === GAME_STATE.GAME_OVER  && <GameOverOverlay onLevelSelect={() => setScreen('select')}/>}
+
+      {/* Math challenge overlay — always mounted so it can appear mid-game */}
+      {screen === 'game' && <MathChallengeOverlay />}
     </div>
   );
 }
