@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { LEVELS } from '../levels/levels';
 import {
-  buildGrid, calcMaxSteps, moveConduit, removeConduit,
+  buildGrid, calcMaxSteps, calcGhostSteps, moveConduit, removeConduit,
   calcStars, isLevelComplete, canMoveInDir, DIR
 } from '../engine/gameEngine';
 
@@ -13,7 +13,16 @@ export const GAME_STATE = {
   GAME_OVER: 'GAME_OVER',
 };
 
-const LEVEL_TIME = 15; // seconds
+// Power-up states
+export const POWER_STATE = {
+  IDLE: 'IDLE',            // nothing happening
+  PENDING_SELECT: 'PENDING_SELECT',  // user clicked ⚡ button, waiting to pick a conduit
+  MATH_CHALLENGE: 'MATH_CHALLENGE',  // math popup shown
+  GHOST_ARMED: 'GHOST_ARMED',        // conduit selected, ghost move ready
+};
+
+const LEVEL_TIME = 15;
+const MAX_POWER_CHARGES = 3;
 
 function initLevel(levelDef) {
   const conduits  = levelDef.conduits.map(c => ({ ...c }));
@@ -40,13 +49,30 @@ function initLevel(levelDef) {
     history: [],
     timeLeft: LEVEL_TIME,
     timerActive: false,
+    // power-up state (preserved across level resets via spread below)
+    powerCharges: MAX_POWER_CHARGES,
+    powerState: POWER_STATE.IDLE,
+    powerConduitId: null,   // conduit targeted for ghost move
+    mathQuestion: null,     // { a, op, b, answer }
+    mathShake: false,       // trigger shake on wrong answer
   };
 }
 
 let timerInterval = null;
-
 function clearTimer() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function generateMathQuestion() {
+  const a = Math.floor(Math.random() * 20) + 1;
+  const b = Math.floor(Math.random() * 20) + 1;
+  const useAdd = Math.random() > 0.5;
+  if (useAdd) {
+    return { a, op: '+', b, answer: a + b };
+  } else {
+    const big = Math.max(a, b), small = Math.min(a, b);
+    return { a: big, op: '−', b: small, answer: big - small };
+  }
 }
 
 export const useGameStore = create((set, get) => ({
@@ -57,18 +83,23 @@ export const useGameStore = create((set, get) => ({
 
   loadLevel(index) {
     clearTimer();
-    const { unlockedLevels, levelStars } = get();
-    set({ currentLevelIndex: index, unlockedLevels, levelStars, ...initLevel(LEVELS[index]) });
+    const { unlockedLevels, levelStars, powerCharges } = get();
+    set({
+      currentLevelIndex: index,
+      unlockedLevels,
+      levelStars,
+      ...initLevel(LEVELS[index]),
+      powerCharges,  // persist charges across levels
+    });
   },
 
   startTimer() {
     clearTimer();
     set({ timerActive: true, timeLeft: LEVEL_TIME });
     timerInterval = setInterval(() => {
-      const { timeLeft, gameState, satisfiedCount, totalBots } = get();
+      const { timeLeft, gameState } = get();
       if (gameState === GAME_STATE.LEVEL_WIN || gameState === GAME_STATE.GAME_OVER) {
-        clearTimer();
-        return;
+        clearTimer(); return;
       }
       const next = timeLeft - 0.1;
       if (next <= 0) {
@@ -83,36 +114,96 @@ export const useGameStore = create((set, get) => ({
   selectConduit(id) {
     const s = get();
     if (s.gameState !== GAME_STATE.IDLE) return;
-    // Start timer on first interaction
-    if (!s.timerActive && s.timeLeft === LEVEL_TIME) {
-      get().startTimer();
+
+    // If power is PENDING_SELECT, clicking a conduit arms it for ghost
+    if (s.powerState === POWER_STATE.PENDING_SELECT) {
+      if (!id) {
+        // clicked empty space — cancel power mode
+        set({ powerState: POWER_STATE.IDLE, selectedConduitId: null });
+        return;
+      }
+      set({
+        powerState: POWER_STATE.MATH_CHALLENGE,
+        powerConduitId: id,
+        selectedConduitId: id,
+        mathQuestion: generateMathQuestion(),
+        mathShake: false,
+      });
+      return;
     }
+
+    if (!s.timerActive && s.timeLeft === LEVEL_TIME) get().startTimer();
     set(st => ({ selectedConduitId: st.selectedConduitId === id ? null : id }));
+  },
+
+  // ── Power-up: activate pending-select mode ───────────────────────────────
+  activatePower() {
+    const s = get();
+    if (s.powerCharges <= 0) return;
+    if (s.gameState !== GAME_STATE.IDLE) return;
+    if (s.powerState !== POWER_STATE.IDLE) {
+      // toggle off if already pending
+      set({ powerState: POWER_STATE.IDLE, selectedConduitId: null });
+      return;
+    }
+    set({ powerState: POWER_STATE.PENDING_SELECT, selectedConduitId: null });
+  },
+
+  // ── Math answer submitted ────────────────────────────────────────────────
+  submitMathAnswer(userAnswer) {
+    const s = get();
+    if (s.powerState !== POWER_STATE.MATH_CHALLENGE) return;
+    if (parseInt(userAnswer, 10) === s.mathQuestion.answer) {
+      // Correct — arm the ghost move
+      set({
+        powerState: POWER_STATE.GHOST_ARMED,
+        powerCharges: s.powerCharges - 1,
+        mathQuestion: null,
+        mathShake: false,
+      });
+    } else {
+      // Wrong — shake and give new question
+      set({ mathShake: true, mathQuestion: generateMathQuestion() });
+      setTimeout(() => set({ mathShake: false }), 500);
+    }
+  },
+
+  cancelPower() {
+    set({
+      powerState: POWER_STATE.IDLE,
+      powerConduitId: null,
+      mathQuestion: null,
+      mathShake: false,
+      selectedConduitId: null,
+    });
   },
 
   attemptMove(conduitId, dir) {
     const s = get();
     if (s.gameState !== GAME_STATE.IDLE) return;
 
-    // Start timer on first move if not started
-    if (!s.timerActive && s.timeLeft === LEVEL_TIME) {
-      get().startTimer();
-    }
+    if (!s.timerActive && s.timeLeft === LEVEL_TIME) get().startTimer();
 
     const conduit = s.conduits.find(c => c.id === conduitId);
     if (!conduit) return;
 
+    const isGhost = s.powerState === POWER_STATE.GHOST_ARMED && s.powerConduitId === conduitId;
+
     if (!canMoveInDir(conduit, dir)) {
       set({ nudgeConduitId: conduitId });
       setTimeout(() => set({ nudgeConduitId: null }), 400);
+      if (isGhost) set({ powerState: POWER_STATE.IDLE, powerConduitId: null });
       return;
     }
 
-    const { steps, exitsAt } = calcMaxSteps(conduit, dir, s.grid, s.cols, s.rows, s.exits);
+    const { steps, exitsAt } = isGhost
+      ? calcGhostSteps(conduit, dir, s.grid, s.cols, s.rows, s.exits)
+      : calcMaxSteps(conduit, dir, s.grid, s.cols, s.rows, s.exits);
 
     if (steps === 0 && !exitsAt) {
       set({ nudgeConduitId: conduitId });
       setTimeout(() => set({ nudgeConduitId: null }), 400);
+      if (isGhost) set({ powerState: POWER_STATE.IDLE, powerConduitId: null });
       return;
     }
 
@@ -153,6 +244,8 @@ export const useGameStore = create((set, get) => ({
           animatingRobotId: exitsAt.id,
           history: [...curr.history, snapshot],
           selectedConduitId: null,
+          powerState: POWER_STATE.IDLE,
+          powerConduitId: null,
         });
 
         setTimeout(() => {
@@ -185,6 +278,8 @@ export const useGameStore = create((set, get) => ({
           gameState: GAME_STATE.IDLE,
           history: [...curr.history, snapshot],
           selectedConduitId: null,
+          powerState: POWER_STATE.IDLE,
+          powerConduitId: null,
         });
       }
     }, 280);
@@ -202,20 +297,22 @@ export const useGameStore = create((set, get) => ({
       selectedConduitId: null,
       nudgeConduitId: null,
       animatingRobotId: null,
+      powerState: POWER_STATE.IDLE,
+      powerConduitId: null,
     });
   },
 
   restart() {
     clearTimer();
-    const { currentLevelIndex, unlockedLevels, levelStars } = get();
-    set({ ...initLevel(LEVELS[currentLevelIndex]), unlockedLevels, levelStars, currentLevelIndex });
+    const { currentLevelIndex, unlockedLevels, levelStars, powerCharges } = get();
+    set({ ...initLevel(LEVELS[currentLevelIndex]), unlockedLevels, levelStars, currentLevelIndex, powerCharges });
   },
 
   nextLevel() {
     clearTimer();
-    const { currentLevelIndex, unlockedLevels, levelStars } = get();
+    const { currentLevelIndex, unlockedLevels, levelStars, powerCharges } = get();
     const next = currentLevelIndex + 1;
     if (next >= LEVELS.length) return;
-    set({ ...initLevel(LEVELS[next]), currentLevelIndex: next, unlockedLevels, levelStars });
+    set({ ...initLevel(LEVELS[next]), currentLevelIndex: next, unlockedLevels, levelStars, powerCharges });
   },
 }));
