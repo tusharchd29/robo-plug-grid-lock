@@ -21,7 +21,7 @@ export default function TimerRing({ timeLeft, anxiety, hope, children }) {
         style={{ position:'absolute', inset:0, width:'100%', height:'100%' }}
       >
         {/* Track */}
-        <circle cx="60" cy="60" r={R} fill="none" stroke="rgba(200,160,200,0.12)" strokeWidth="5"/>
+        <circle cx="60" cy="60" r={R} fill="none" stroke="rgba(100,80,180,0.2)" strokeWidth="5"/>
         {/* Fill — only show once timer started */}
         {anxiety > 0 && (
           <circle cx="60" cy="60" r={R}
@@ -40,7 +40,7 @@ export default function TimerRing({ timeLeft, anxiety, hope, children }) {
         {anxiety > 0 && (
           <text x="60" y="113" textAnchor="middle" fontSize="9"
             fontFamily="Nunito, sans-serif" fontWeight="900"
-            fill={ringColor} opacity="0.9">
+            fill={ringColor} opacity="1">
             {Math.ceil(timeLeft)}s
           </text>
         )}
