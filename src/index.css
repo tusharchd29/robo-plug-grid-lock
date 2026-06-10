@@ -37,3 +37,4 @@ button {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(200,130,180,0.25); border-radius: 99px; }
+/* build trigger */
