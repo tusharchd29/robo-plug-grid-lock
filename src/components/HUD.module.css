@@ -32,6 +32,55 @@
 .star { font-size: 18px; opacity: 0.12; transition: opacity 0.3s, filter 0.3s; }
 .star.on { opacity: 1; filter: drop-shadow(0 0 5px #ffd700); }
 
+/* ─── Power button ─────────────────────────────────────────────────── */
+.powerBtn {
+  display: flex; align-items: center; justify-content: center;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.9);
+  border: 2px solid rgba(255,180,210,0.4);
+  border-radius: 14px;
+  cursor: pointer; flex-shrink: 0;
+  transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.powerBtn:active { transform: scale(0.92); }
+.powerBtn:disabled { cursor: not-allowed; opacity: 0.6; }
+
+/* Active / pending state — yellow glow border */
+.powerBtnActive {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 3px rgba(251,191,36,0.25), 0 0 12px rgba(251,191,36,0.35);
+  background: rgba(255,248,220,0.95);
+  animation: powerPulse 0.9s ease-in-out infinite alternate;
+}
+@keyframes powerPulse {
+  from { box-shadow: 0 0 0 2px rgba(251,191,36,0.2), 0 0 8px rgba(251,191,36,0.25); }
+  to   { box-shadow: 0 0 0 4px rgba(251,191,36,0.35), 0 0 18px rgba(251,191,36,0.45); }
+}
+
+.powerBtnDepleted {
+  opacity: 0.45;
+}
+
+.powerBolts {
+  display: flex; gap: 1px;
+  line-height: 1;
+}
+
+.bolt {
+  font-size: 16px;
+  transition: opacity 0.3s, filter 0.3s;
+}
+.boltOn {
+  opacity: 1;
+  filter: drop-shadow(0 0 4px #fbbf24);
+}
+.boltOff {
+  opacity: 0.2;
+  filter: grayscale(1);
+}
+
+/* ─── Action buttons ───────────────────────────────────────────────── */
 .btn {
   width: 46px; height: 46px;
   background: rgba(255,255,255,0.9);
