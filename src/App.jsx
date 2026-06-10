@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Component } from 'react';
 import { useGameStore, GAME_STATE } from './store/gameStore';
 import Grid from './components/Grid';
 import CatCharacter from './components/CatCharacter';
@@ -9,6 +9,28 @@ import { WinOverlay, GameOverOverlay, MathChallengeOverlay } from './components/
 import styles from './App.module.css';
 
 const TOTAL_TIME = 15;
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(e) { return { error: e }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 32, fontFamily: 'Nunito,sans-serif', color: '#c0304a', background: '#fff8f3', height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <div style={{ fontSize: 48 }}>🙀</div>
+          <div style={{ fontSize: 20, fontWeight: 900 }}>Something crashed!</div>
+          <div style={{ fontSize: 13, color: '#888', maxWidth: 340, textAlign: 'center', wordBreak: 'break-all' }}>
+            {this.state.error?.message || String(this.state.error)}
+          </div>
+          <button onClick={() => this.setState({ error: null })} style={{ marginTop: 16, padding: '10px 24px', background: '#f472b6', color: 'white', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function App() {
   const [screen, setScreen] = useState('select');
@@ -40,62 +62,56 @@ export default function App() {
   }
 
   return (
-    <div className={styles.root}>
-      <div className={styles.blob1}/>
-      <div className={styles.blob2}/>
-      <div className={styles.blob3}/>
+    <ErrorBoundary>
+      <div className={styles.root}>
+        <div className={styles.blob1}/>
+        <div className={styles.blob2}/>
+        <div className={styles.blob3}/>
 
-      {screen === 'select' && (
-        <div className={styles.selectScreen}>
-          <LevelSelect onSelect={handleSelectLevel}/>
-        </div>
-      )}
-
-      {screen === 'game' && (
-        <div className={styles.gameLayout}>
-
-          {/* Top bar */}
-          <div className={styles.topBar}>
-            <button className={styles.backBtn} onClick={() => setScreen('select')}>← Levels</button>
-            <div className={styles.levelBadge}>✦ Level {levelDef?.id ?? currentLevelIndex + 1}</div>
-            <div style={{ width: 80 }}/>
+        {screen === 'select' && (
+          <div className={styles.selectScreen}>
+            <LevelSelect onSelect={handleSelectLevel}/>
           </div>
+        )}
 
-          {/* Cat + timer ring */}
-          <div className={styles.catZone}>
-            <TimerRing timeLeft={timeLeft} anxiety={anxiety} hope={hope}>
-              <CatCharacter
-                timeRatio={timeRatio}
-                progressRatio={progressRatio}
-                timerStarted={timerActive}
-              />
-            </TimerRing>
-            <div
-              className={styles.moodLabel}
-              style={{ color: anxiety > 0.6 ? '#e03060' : anxiety > 0.3 ? '#e07030' : '#c060a0' }}
-            >
-              {moodLabel}
+        {screen === 'game' && (
+          <div className={styles.gameLayout}>
+            <div className={styles.topBar}>
+              <button className={styles.backBtn} onClick={() => setScreen('select')}>← Levels</button>
+              <div className={styles.levelBadge}>✦ Level {levelDef?.id ?? currentLevelIndex + 1}</div>
+              <div style={{ width: 80 }}/>
+            </div>
+
+            <div className={styles.catZone}>
+              <TimerRing timeLeft={timeLeft} anxiety={anxiety} hope={hope}>
+                <CatCharacter
+                  timeRatio={timeRatio}
+                  progressRatio={progressRatio}
+                  timerStarted={timerActive}
+                />
+              </TimerRing>
+              <div
+                className={styles.moodLabel}
+                style={{ color: anxiety > 0.6 ? '#e03060' : anxiety > 0.3 ? '#e07030' : '#c060a0' }}
+              >
+                {moodLabel}
+              </div>
+            </div>
+
+            <div className={styles.gridZone}>
+              <Grid/>
+            </div>
+
+            <div className={styles.hudBar}>
+              <HUD/>
             </div>
           </div>
+        )}
 
-          {/* Puzzle grid */}
-          <div className={styles.gridZone}>
-            <Grid/>
-          </div>
-
-          {/* Bottom HUD */}
-          <div className={styles.hudBar}>
-            <HUD/>
-          </div>
-
-        </div>
-      )}
-
-      {screen === 'game' && gameState === GAME_STATE.LEVEL_WIN  && <WinOverlay  onLevelSelect={() => setScreen('select')}/>}
-      {screen === 'game' && gameState === GAME_STATE.GAME_OVER  && <GameOverOverlay onLevelSelect={() => setScreen('select')}/>}
-
-      {/* Math challenge overlay — always mounted so it can appear mid-game */}
-      {screen === 'game' && <MathChallengeOverlay />}
-    </div>
+        {screen === 'game' && gameState === GAME_STATE.LEVEL_WIN  && <WinOverlay  onLevelSelect={() => setScreen('select')}/>}
+        {screen === 'game' && gameState === GAME_STATE.GAME_OVER  && <GameOverOverlay onLevelSelect={() => setScreen('select')}/>}
+        {screen === 'game' && <MathChallengeOverlay />}
+      </div>
+    </ErrorBoundary>
   );
 }
