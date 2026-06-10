@@ -107,10 +107,10 @@ export default function CatCharacter({ timeRatio = 1, progressRatio = 0, timerSt
 
   return (
     <svg
-      viewBox="0 0 200 210"
+      viewBox="-10 0 220 230"
       xmlns="http://www.w3.org/2000/svg"
       style={{
-        width: '100%', height: '100%',
+        width: '80%', height: '80%',
         overflow: 'visible',
         filter: 'drop-shadow(0 6px 18px rgba(140,90,60,0.22))',
         transform,
