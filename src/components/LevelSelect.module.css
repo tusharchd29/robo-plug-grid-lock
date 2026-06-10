@@ -9,119 +9,112 @@
   box-sizing: border-box;
   position: relative;
   z-index: 1;
-  gap: 16px;
+  gap: 14px;
 }
 
-/* Header */
 .header {
   text-align: center;
   flex-shrink: 0;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
 }
-.catIcon { font-size: 48px; line-height: 1; margin-bottom: 2px; }
+.catIcon { font-size: 44px; line-height: 1; margin-bottom: 2px; }
 .title {
-  font-family: 'Nunito', sans-serif;
-  font-size: clamp(26px, 7vw, 38px);
-  font-weight: 900;
-  color: #5a3060;
+  font-family: 'Space Grotesk', 'Nunito', sans-serif;
+  font-size: clamp(28px, 7vw, 40px);
+  font-weight: 700;
+  color: #e8d8ff;
   line-height: 1;
   letter-spacing: -0.02em;
 }
 .subtitle {
   font-family: 'Nunito', sans-serif;
-  font-size: clamp(13px, 3.5vw, 16px);
+  font-size: clamp(13px, 3.5vw, 15px);
   font-weight: 700;
-  color: #c060a0;
+  color: #8878c0;
 }
 .paws {
-  font-size: 16px;
-  opacity: 0.6;
+  font-size: 15px;
+  opacity: 0.5;
   margin-top: 2px;
   letter-spacing: 4px;
 }
 
-/* Grid */
 .grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 9px;
+  gap: 8px;
   width: 100%;
   max-width: 380px;
   flex-shrink: 0;
 }
 
-/* Cards */
 .card {
   position: relative;
   aspect-ratio: 1;
-  background: rgba(255,255,255,0.85);
-  border: 2.5px solid color-mix(in srgb, var(--yarn) 30%, white);
-  border-radius: 18px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(160,130,220,0.2);
+  border-radius: 16px;
   cursor: pointer;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   gap: 3px;
   padding: 4px 2px;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s, border-color 0.15s, background 0.15s;
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(180,100,160,0.08);
 }
-.card:not(.locked):active {
-  transform: scale(0.93);
+.card:not(.locked):active { transform: scale(0.93); }
+.card:not(.locked):hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(180,150,255,0.4);
 }
 .card.current {
-  border-color: var(--yarn);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--yarn) 25%, transparent);
+  border-color: rgba(180,150,255,0.7);
+  background: rgba(120,90,200,0.15);
 }
-.card.locked { opacity: 0.45; cursor: not-allowed; }
+.card.locked { opacity: 0.3; cursor: not-allowed; }
 
-/* Yarn accent strip at top of card */
 .yarnDot {
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 4px;
+  height: 3px;
   background: var(--yarn);
-  border-radius: 18px 18px 0 0;
-  opacity: 0.7;
+  border-radius: 16px 16px 0 0;
+  opacity: 0.8;
 }
 
 .num {
-  font-family: 'Nunito', sans-serif;
-  font-size: clamp(15px, 4vw, 20px);
-  font-weight: 900;
-  color: #5a3060;
+  font-family: 'Space Grotesk', 'Nunito', sans-serif;
+  font-size: clamp(14px, 4vw, 19px);
+  font-weight: 700;
+  color: #d0c0f8;
   line-height: 1;
 }
 
 .stars { display: flex; gap: 1px; }
 .starOn  { font-size: 9px; color: #fbbf24; }
-.starOff { font-size: 9px; color: rgba(180,140,180,0.2); }
+.starOff { font-size: 9px; color: rgba(120,100,160,0.3); }
 
-.pill {
-  font-size: 13px;
-  line-height: 1;
-}
+.pill { font-size: 12px; line-height: 1; }
 
 .lockOverlay {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(255,248,240,0.6);
-  border-radius: 16px;
-  font-size: 18px;
+  background: rgba(10,8,24,0.4);
+  border-radius: 14px;
+  font-size: 16px;
+  opacity: 0.7;
 }
 
-/* Difficulty */
-.easy   { /* emoji handle */ }
-.medium { /* emoji handle */ }
-.hard   { /* emoji handle */ }
+.easy {}
+.medium {}
+.hard {}
 
-/* Footer */
 .footer {
   font-family: 'Nunito', sans-serif;
   font-size: 12px; font-weight: 700;
-  color: #c090b0;
+  color: #6050a0;
   text-align: center;
   flex-shrink: 0;
-  opacity: 0.8;
+  opacity: 0.7;
 }
