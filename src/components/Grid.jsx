@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { useGameStore, GAME_STATE } from '../store/gameStore';
+import { useGameStore, GAME_STATE, POWER_STATE } from '../store/gameStore';
 import { getConduitCells, DIR } from '../engine/gameEngine';
 import YarnBall from './YarnBall';
 import styles from './Grid.module.css';
@@ -10,7 +10,7 @@ const DRAG_THRESHOLD = 8;
 function getCellSize(cols, rows, maxW, maxH) {
   const byCol = Math.floor((maxW - PADDING * 2) / cols);
   const byRow = Math.floor((maxH - PADDING * 2) / rows);
-  return Math.max(44, Math.min(76, Math.min(byCol, byRow)));
+  return Math.max(40, Math.min(76, Math.min(byCol, byRow)));
 }
 
 export default function Grid() {
@@ -18,6 +18,7 @@ export default function Grid() {
     cols, rows, conduits, exits, deadZones,
     selectedConduitId, gameState, nudgeConduitId, animatingRobotId,
     selectConduit, attemptMove,
+    powerState, powerConduitId,
   } = useGameStore();
 
   const wrapRef = useRef(null);
@@ -42,7 +43,6 @@ export default function Grid() {
   const totalW = boardW + PADDING * 2;
   const totalH = boardH + PADDING * 2;
 
-  // Touch/pointer up
   useEffect(() => {
     function getXY(e) {
       if (e.changedTouches?.length) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
@@ -65,7 +65,6 @@ export default function Grid() {
     return () => { window.removeEventListener('pointerup', onUp); window.removeEventListener('touchend', onUp); };
   }, [attemptMove]);
 
-  // Keyboard
   useEffect(() => {
     function onKey(e) {
       if (!selectedConduitId || gameState !== GAME_STATE.IDLE) return;
@@ -80,10 +79,13 @@ export default function Grid() {
     if (gameState !== GAME_STATE.IDLE) return;
     e.preventDefault(); e.stopPropagation();
     selectConduit(conduit.id);
-    const startX = e.touches?.[0]?.clientX ?? e.clientX;
-    const startY = e.touches?.[0]?.clientY ?? e.clientY;
-    drag.current = { conduitId: conduit.id, startX, startY };
-  }, [gameState, selectConduit]);
+    // Only start drag if NOT in pending-select mode (those clicks just arm the ghost)
+    if (powerState !== POWER_STATE.PENDING_SELECT) {
+      const startX = e.touches?.[0]?.clientX ?? e.clientX;
+      const startY = e.touches?.[0]?.clientY ?? e.clientY;
+      drag.current = { conduitId: conduit.id, startX, startY };
+    }
+  }, [gameState, selectConduit, powerState]);
 
   const onBoardDown = useCallback((e) => {
     if (!e.target.closest('[data-conduit]')) { selectConduit(null); drag.current = null; }
@@ -92,8 +94,11 @@ export default function Grid() {
   function renderConduits() {
     return conduits.map(conduit => {
       const cells = getConduitCells(conduit);
-      const isSelected = selectedConduitId === conduit.id;
-      const isNudging  = nudgeConduitId === conduit.id;
+      const isSelected  = selectedConduitId === conduit.id;
+      const isNudging   = nudgeConduitId === conduit.id;
+      const isGhostArmed = powerState === POWER_STATE.GHOST_ARMED && powerConduitId === conduit.id;
+      const isPowerTarget = powerState === POWER_STATE.PENDING_SELECT;
+
       const minR = Math.min(...cells.map(([r]) => r));
       const minC = Math.min(...cells.map(([, c]) => c));
       const maxR = Math.max(...cells.map(([r]) => r));
@@ -113,6 +118,8 @@ export default function Grid() {
             isH ? styles.yarnH : styles.yarnV,
             isSelected ? styles.selected : '',
             isNudging ? styles.nudge : '',
+            isGhostArmed ? styles.ghostArmed : '',
+            isPowerTarget ? styles.powerTarget : '',
           ].join(' ')}
           style={{
             left: x, top: y, width: w, height: h,
@@ -127,7 +134,6 @@ export default function Grid() {
             <div className={styles.yarnShadow} />
             <div className={styles.yarnMain} />
             <div className={styles.yarnSheen} />
-            {/* Twist marks */}
             {Array.from({ length: Math.max(1, Math.floor((isH ? w : h) / 18)) }).map((_, i) => (
               <div key={i} className={isH ? styles.twistH : styles.twistV}
                 style={{ [isH ? 'left' : 'top']: `${12 + i * 18}px` }} />
@@ -138,9 +144,31 @@ export default function Grid() {
           <div className={isH ? styles.capRight : styles.capBottom} />
           {/* Selected glow */}
           {isSelected && <div className={styles.selectedGlow} />}
-          {/* Direction arrows when selected */}
-          {isSelected && (
+          {/* Ghost armed glow — lightning bolt indicator */}
+          {isGhostArmed && (
+            <div className={styles.ghostGlow}>
+              <span className={styles.ghostBolt}>⚡</span>
+            </div>
+          )}
+          {/* Direction arrows when selected and not ghost */}
+          {isSelected && !isGhostArmed && (
             <div className={styles.arrows}>
+              {isH ? (
+                <>
+                  <span className={`${styles.arrow} ${styles.arrowL}`}>◂</span>
+                  <span className={`${styles.arrow} ${styles.arrowR}`}>▸</span>
+                </>
+              ) : (
+                <>
+                  <span className={`${styles.arrow} ${styles.arrowU}`}>▴</span>
+                  <span className={`${styles.arrow} ${styles.arrowD}`}>▾</span>
+                </>
+              )}
+            </div>
+          )}
+          {/* Ghost-armed shows swipe-direction arrows in gold */}
+          {isGhostArmed && isSelected && (
+            <div className={`${styles.arrows} ${styles.arrowsGhost}`}>
               {isH ? (
                 <>
                   <span className={`${styles.arrow} ${styles.arrowL}`}>◂</span>
