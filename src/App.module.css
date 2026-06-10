@@ -116,8 +116,9 @@
 /* ── Bottom HUD bar ─────────────────────── */
 .hudBar {
   flex-shrink: 0;
-  padding: 6px 12px max(10px, env(safe-area-inset-bottom));
+  padding: 8px 16px max(12px, env(safe-area-inset-bottom));
   background: rgba(255,255,255,0.75);
   border-top: 2px solid rgba(255,200,220,0.3);
   backdrop-filter: blur(8px);
+  overflow: visible;
 }
