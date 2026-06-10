@@ -75,7 +75,9 @@
 }
 .boltOn {
   opacity: 1;
-  filter: drop-shadow(0 0 4px #fbbf24);
+  filter: drop-shadow(0 0 5px #f97316);
+  transform: rotate(-15deg);
+  display: inline-block;
 }
 .boltOff {
   opacity: 0.2;
