@@ -47,11 +47,11 @@ export default function HUD() {
         className={`${styles.powerBtn} ${isPowerPending ? styles.powerBtnActive : ''} ${powerCharges === 0 ? styles.powerBtnDepleted : ''}`}
         onClick={activatePower}
         disabled={powerCharges === 0}
-        title={powerCharges === 0 ? 'No power charges left' : 'Activate ghost mode'}
+        title={powerCharges === 0 ? 'No hammers left' : 'Use hammer — smash through blockers!'}
       >
         <span className={styles.powerBolts}>
           {[0,1,2].map(i => (
-            <span key={i} className={`${styles.bolt} ${i < powerCharges ? styles.boltOn : styles.boltOff}`}>⚡</span>
+            <span key={i} className={`${styles.bolt} ${i < powerCharges ? styles.boltOn : styles.boltOff}`}>🔨</span>
           ))}
         </span>
       </button>
