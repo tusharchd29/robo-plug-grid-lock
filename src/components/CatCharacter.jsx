@@ -73,6 +73,7 @@ export default function CatCharacter({ timeRatio = 1, progressRatio = 0, timerSt
   // ── Derived visuals ──────────────────────────────────────────────────────
   const isAngry   = anxiety > 0.65;
   const isWorried = anxiety > 0.25 && !isAngry;
+  const eyeHappy  = h;
 
   // Body color: grey sad → warm cream happy → reddish angry
   const bodyColor  = isAngry
