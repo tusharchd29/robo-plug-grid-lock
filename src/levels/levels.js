@@ -76,7 +76,7 @@ export const LEVELS = [
     conduits:[
       { id:'c1', color:'#fb7185', axis:'H', headRow:1, headCol:0, length:2 },
       { id:'c2', color:'#34d399', axis:'V', headRow:0, headCol:2, length:3 },
-      { id:'c3', color:'#facc15', axis:'H', headRow:2, headCol:2, length:2 },
+      { id:'c3', color:'#facc15', axis:'H', headRow:2, headCol:3, length:2 },
       { id:'c4', color:'#60a5fa', axis:'V', headRow:3, headCol:4, length:2 },
       { id:'c5', color:'#c084fc', axis:'H', headRow:4, headCol:0, length:3 },
     ],
