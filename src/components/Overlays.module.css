@@ -23,7 +23,29 @@
   to   { transform: scale(1);   opacity: 1; }
 }
 
+/* Shake animation for wrong math answer */
+.shake {
+  animation: shake 0.45s cubic-bezier(0.36,0.07,0.19,0.97) both;
+}
+@keyframes shake {
+  10%, 90%  { transform: translateX(-3px); }
+  20%, 80%  { transform: translateX(4px);  }
+  30%, 50%, 70% { transform: translateX(-5px); }
+  40%, 60%  { transform: translateX(5px);  }
+}
+
 .bigEmoji { font-size: 56px; line-height: 1; }
+
+/* Power emoji with glow */
+.powerEmoji {
+  font-size: 56px; line-height: 1;
+  filter: drop-shadow(0 0 14px #fbbf24) drop-shadow(0 0 28px #f59e0b);
+  animation: pulseGlow 1.4s ease-in-out infinite alternate;
+}
+@keyframes pulseGlow {
+  from { filter: drop-shadow(0 0 8px #fbbf24); }
+  to   { filter: drop-shadow(0 0 22px #f59e0b) drop-shadow(0 0 40px #fde68a); }
+}
 
 .title {
   font-family: 'Nunito', sans-serif;
@@ -34,6 +56,53 @@
   font-family: 'Nunito', sans-serif;
   font-size: 14px; font-weight: 700;
   color: #c060a0; text-align: center;
+}
+
+/* Math question box */
+.mathBox {
+  width: 100%;
+  background: rgba(255,200,230,0.18);
+  border: 2px solid rgba(255,160,210,0.4);
+  border-radius: 18px;
+  padding: 16px 20px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+  margin: 4px 0;
+}
+
+.mathExpr {
+  font-family: 'Nunito', sans-serif;
+  font-size: 30px; font-weight: 900;
+  color: #5a3060;
+  letter-spacing: 2px;
+}
+
+.mathInput {
+  width: 100%;
+  font-family: 'Nunito', sans-serif;
+  font-size: 24px; font-weight: 900;
+  text-align: center;
+  color: #5a3060;
+  background: #fff8f3;
+  border: 2.5px solid rgba(255,160,210,0.6);
+  border-radius: 14px;
+  padding: 10px 16px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -moz-appearance: textfield;
+}
+.mathInput::-webkit-inner-spin-button,
+.mathInput::-webkit-outer-spin-button { -webkit-appearance: none; }
+.mathInput:focus {
+  border-color: #f472b6;
+  box-shadow: 0 0 0 3px rgba(244,114,182,0.18);
+}
+
+.wrongHint {
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px; font-weight: 800;
+  color: #e05080;
+  animation: popIn 0.25s ease;
 }
 
 .starsRow { display: flex; gap: 8px; }
@@ -90,3 +159,50 @@
   font-size: 12px; font-weight: 800;
   color: #c060a0;
 }
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 1px; flex-shrink: 0;
+}
+.icon { font-size: 15px; line-height: 1; }
+.val {
+  font-family: 'Nunito', sans-serif;
+  font-size: 20px; font-weight: 900;
+  color: #5a3060; line-height: 1;
+}
+.val.warn { color: #e05080; }
+.of { font-size: 13px; font-weight: 700; opacity: 0.55; }
+.lbl {
+  font-size: 9px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: #c090b0;
+}
+
+.div {
+  width: 1px; height: 34px;
+  background: rgba(200,150,180,0.2);
+  flex-shrink: 0;
+}
+
+.stars { display: flex; gap: 2px; flex-shrink: 0; }
+.star { font-size: 18px; opacity: 0.12; transition: opacity 0.3s, filter 0.3s; }
+.star.on { opacity: 1; filter: drop-shadow(0 0 5px #ffd700); }
+
+.btn {
+  width: 46px; height: 46px;
+  background: rgba(255,255,255,0.9);
+  border: 2px solid rgba(255,180,210,0.4);
+  border-radius: 14px;
+  font-size: 22px; color: #d06090;
+  cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.1s, background 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.9); background: white; }
