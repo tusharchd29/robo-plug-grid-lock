@@ -20,7 +20,14 @@ export const POWER_STATE = {
   GHOST_ARMED: 'GHOST_ARMED',
 };
 
-// Timer: 10s for L1-8, 12s for L9-15, 15s for L16-20, 13s for L21+
+// Recharge modal types
+export const RECHARGE_TYPE = {
+  NONE: 'NONE',
+  TIMER: 'TIMER',       // timer expired — answer to continue
+  GHOST: 'GHOST',       // ghost charges exhausted
+  UNDO: 'UNDO',         // undos exhausted
+};
+
 function getLevelTime(index) {
   if (index < 8)  return 10;
   if (index < 15) return 12;
@@ -29,7 +36,41 @@ function getLevelTime(index) {
 }
 
 const MAX_POWER_CHARGES = 3;
-const MAX_UNDOS = 3; // limited undos per level
+const MAX_UNDOS         = 3;
+const TIMER_RESCUE_MAX  = 3;   // max rescues per level
+const RECHARGE_NEEDED   = 2;   // questions needed to recharge ghost/undo
+
+// HARD math — for ghost power unlock
+function generateHardMath() {
+  const type = Math.floor(Math.random() * 3);
+  if (type === 0) {
+    const a = Math.floor(Math.random() * 40) + 5;
+    const b = Math.floor(Math.random() * 40) + 5;
+    return { a, op: '+', b, answer: a + b };
+  } else if (type === 1) {
+    const a = Math.floor(Math.random() * 40) + 20;
+    const b = Math.floor(Math.random() * (a - 1)) + 1;
+    return { a, op: '−', b, answer: a - b };
+  } else {
+    const a = Math.floor(Math.random() * 8) + 2;
+    const b = Math.floor(Math.random() * 8) + 2;
+    return { a, op: '×', b, answer: a * b };
+  }
+}
+
+// EASY math — for recharges and timer rescue
+function generateEasyMath() {
+  const useAdd = Math.random() > 0.5;
+  if (useAdd) {
+    const a = Math.floor(Math.random() * 15) + 1;
+    const b = Math.floor(Math.random() * 15) + 1;
+    return { a, op: '+', b, answer: a + b };
+  } else {
+    const a = Math.floor(Math.random() * 18) + 2;
+    const b = Math.floor(Math.random() * (a - 1)) + 1;
+    return { a, op: '−', b, answer: a - b };
+  }
+}
 
 function initLevel(levelDef, index) {
   const conduits  = levelDef.conduits.map(c => ({ ...c }));
@@ -64,33 +105,19 @@ function initLevel(levelDef, index) {
     powerConduitId: null,
     mathQuestion: null,
     mathShake: false,
+    // Recharge state
+    rechargeType: RECHARGE_TYPE.NONE,
+    rechargeProgress: 0,          // how many correct answers so far this recharge session
+    rechargeNeeded: 0,            // total correct needed (1 for timer, 2 for ghost/undo)
+    rechargeMathQuestion: null,
+    rechargeMathShake: false,
+    timerRescuesLeft: TIMER_RESCUE_MAX,
   };
 }
 
 let timerInterval = null;
 function clearTimer() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-}
-
-// Harder math: add/subtract up to 50, multiply small numbers
-function generateMathQuestion() {
-  const type = Math.floor(Math.random() * 3);
-  if (type === 0) {
-    // Addition up to 50
-    const a = Math.floor(Math.random() * 40) + 5;
-    const b = Math.floor(Math.random() * 40) + 5;
-    return { a, op: '+', b, answer: a + b };
-  } else if (type === 1) {
-    // Subtraction — result always positive
-    const a = Math.floor(Math.random() * 40) + 20;
-    const b = Math.floor(Math.random() * (a - 1)) + 1;
-    return { a, op: '−', b, answer: a - b };
-  } else {
-    // Multiplication (2-9 × 2-9)
-    const a = Math.floor(Math.random() * 8) + 2;
-    const b = Math.floor(Math.random() * 8) + 2;
-    return { a, op: '×', b, answer: a * b };
-  }
 }
 
 export const useGameStore = create((set, get) => ({
@@ -116,20 +143,115 @@ export const useGameStore = create((set, get) => ({
     const LEVEL_TIME = getLevelTime(get().currentLevelIndex);
     set({ timerActive: true, timeLeft: LEVEL_TIME, levelTime: LEVEL_TIME });
     timerInterval = setInterval(() => {
-      const { timeLeft, gameState } = get();
-      if (gameState === GAME_STATE.LEVEL_WIN || gameState === GAME_STATE.GAME_OVER) {
+      const s = get();
+      if (s.gameState === GAME_STATE.LEVEL_WIN || s.gameState === GAME_STATE.GAME_OVER) {
         clearTimer(); return;
       }
-      const next = timeLeft - 0.1;
+      // Pause timer while any recharge modal is open
+      if (s.rechargeType !== RECHARGE_TYPE.NONE) return;
+      const next = s.timeLeft - 0.1;
       if (next <= 0) {
         clearTimer();
-        set({ timeLeft: 0, timerActive: false, gameState: GAME_STATE.GAME_OVER });
+        // Check if timer rescue is available
+        if (s.timerRescuesLeft > 0) {
+          set({
+            timeLeft: 0,
+            timerActive: false,
+            rechargeType: RECHARGE_TYPE.TIMER,
+            rechargeProgress: 0,
+            rechargeNeeded: 1,
+            rechargeMathQuestion: generateEasyMath(),
+            rechargeMathShake: false,
+          });
+        } else {
+          set({ timeLeft: 0, timerActive: false, gameState: GAME_STATE.GAME_OVER });
+        }
       } else {
         set({ timeLeft: next });
       }
     }, 100);
   },
 
+  // ── Recharge: submit answer ──────────────────────────────────────────────
+  submitRechargeAnswer(userAnswer) {
+    const s = get();
+    if (s.rechargeType === RECHARGE_TYPE.NONE) return;
+
+    const correct = parseInt(userAnswer, 10) === s.rechargeMathQuestion.answer;
+
+    if (!correct) {
+      // Wrong answer — shake and give new question, no progress lost
+      set({ rechargeMathShake: true, rechargeMathQuestion: generateEasyMath() });
+      setTimeout(() => set({ rechargeMathShake: false }), 500);
+      return;
+    }
+
+    const newProgress = s.rechargeProgress + 1;
+
+    if (newProgress < s.rechargeNeeded) {
+      // Need more correct answers — show next question
+      set({
+        rechargeProgress: newProgress,
+        rechargeMathQuestion: generateEasyMath(),
+        rechargeMathShake: false,
+      });
+      return;
+    }
+
+    // All answers correct — apply recharge
+    if (s.rechargeType === RECHARGE_TYPE.TIMER) {
+      const LEVEL_TIME = getLevelTime(s.currentLevelIndex);
+      set({
+        rechargeType: RECHARGE_TYPE.NONE,
+        rechargeProgress: 0,
+        rechargeMathQuestion: null,
+        rechargeMathShake: false,
+        timerRescuesLeft: s.timerRescuesLeft - 1,
+        timeLeft: LEVEL_TIME,
+        timerActive: true,
+      });
+      // Restart the interval
+      get().startTimer();
+    } else if (s.rechargeType === RECHARGE_TYPE.GHOST) {
+      set({
+        rechargeType: RECHARGE_TYPE.NONE,
+        rechargeProgress: 0,
+        rechargeMathQuestion: null,
+        rechargeMathShake: false,
+        powerCharges: MAX_POWER_CHARGES,
+      });
+    } else if (s.rechargeType === RECHARGE_TYPE.UNDO) {
+      set({
+        rechargeType: RECHARGE_TYPE.NONE,
+        rechargeProgress: 0,
+        rechargeMathQuestion: null,
+        rechargeMathShake: false,
+        undosLeft: MAX_UNDOS,
+      });
+    }
+  },
+
+  // Dismiss recharge modal — for timer this means accept game over
+  dismissRecharge() {
+    const s = get();
+    if (s.rechargeType === RECHARGE_TYPE.TIMER) {
+      set({
+        rechargeType: RECHARGE_TYPE.NONE,
+        rechargeMathQuestion: null,
+        gameState: GAME_STATE.GAME_OVER,
+      });
+    } else {
+      // For ghost/undo: just close, charges stay at 0
+      set({
+        rechargeType: RECHARGE_TYPE.NONE,
+        rechargeProgress: 0,
+        rechargeMathQuestion: null,
+        rechargeMathShake: false,
+      });
+    }
+  },
+
+  // ── Ghost power ──────────────────────────────────────────────────────────
   selectConduit(id) {
     const s = get();
     if (s.gameState !== GAME_STATE.IDLE) return;
@@ -143,7 +265,7 @@ export const useGameStore = create((set, get) => ({
         powerState: POWER_STATE.MATH_CHALLENGE,
         powerConduitId: id,
         selectedConduitId: id,
-        mathQuestion: generateMathQuestion(),
+        mathQuestion: generateHardMath(),
         mathShake: false,
       });
       return;
@@ -155,10 +277,20 @@ export const useGameStore = create((set, get) => ({
 
   activatePower() {
     const s = get();
-    if (s.powerCharges <= 0) return;
     if (s.gameState !== GAME_STATE.IDLE) return;
     if (s.powerState !== POWER_STATE.IDLE) {
       set({ powerState: POWER_STATE.IDLE, selectedConduitId: null });
+      return;
+    }
+    if (s.powerCharges <= 0) {
+      // Trigger ghost recharge modal
+      set({
+        rechargeType: RECHARGE_TYPE.GHOST,
+        rechargeProgress: 0,
+        rechargeNeeded: RECHARGE_NEEDED,
+        rechargeMathQuestion: generateEasyMath(),
+        rechargeMathShake: false,
+      });
       return;
     }
     set({ powerState: POWER_STATE.PENDING_SELECT, selectedConduitId: null });
@@ -175,7 +307,7 @@ export const useGameStore = create((set, get) => ({
         mathShake: false,
       });
     } else {
-      set({ mathShake: true, mathQuestion: generateMathQuestion() });
+      set({ mathShake: true, mathQuestion: generateHardMath() });
       setTimeout(() => set({ mathShake: false }), 500);
     }
   },
@@ -299,16 +431,26 @@ export const useGameStore = create((set, get) => ({
   },
 
   undo() {
-    const { history, gameState, undosLeft, movesUsed } = get();
-    if (gameState !== GAME_STATE.IDLE && gameState !== GAME_STATE.GAME_OVER) return;
-    if (!history.length) return;
-    if (undosLeft <= 0) return; // no undos left
-    const prev = history[history.length - 1];
+    const s = get();
+    if (s.gameState !== GAME_STATE.IDLE && s.gameState !== GAME_STATE.GAME_OVER) return;
+    if (!s.history.length) return;
+    if (s.undosLeft <= 0) {
+      // Trigger undo recharge modal
+      set({
+        rechargeType: RECHARGE_TYPE.UNDO,
+        rechargeProgress: 0,
+        rechargeNeeded: RECHARGE_NEEDED,
+        rechargeMathQuestion: generateEasyMath(),
+        rechargeMathShake: false,
+      });
+      return;
+    }
+    const prev = s.history[s.history.length - 1];
     set({
       ...prev,
-      movesUsed: movesUsed + 1, // undo costs 1 move
-      undosLeft: undosLeft - 1,
-      history: history.slice(0, -1),
+      movesUsed: s.movesUsed + 1,
+      undosLeft: s.undosLeft - 1,
+      history: s.history.slice(0, -1),
       gameState: GAME_STATE.IDLE,
       selectedConduitId: null,
       nudgeConduitId: null,
