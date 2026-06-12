@@ -5,10 +5,8 @@ import CatCharacter from './components/CatCharacter';
 import TimerRing from './components/TimerRing';
 import HUD from './components/HUD';
 import LevelSelect from './components/LevelSelect';
-import { WinOverlay, GameOverOverlay, MathChallengeOverlay } from './components/Overlays';
+import { WinOverlay, GameOverOverlay, MathChallengeOverlay, RechargeOverlay } from './components/Overlays';
 import styles from './App.module.css';
-
-const TOTAL_TIME = 15;
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -36,10 +34,10 @@ export default function App() {
   const [screen, setScreen] = useState('select');
   const {
     gameState, currentLevelIndex, levelDef, loadLevel,
-    satisfiedCount, totalBots, timeLeft, timerActive,
+    satisfiedCount, totalBots, timeLeft, timerActive, levelTime,
   } = useGameStore();
 
-  const timeRatio     = timeLeft / TOTAL_TIME;
+  const timeRatio     = levelTime > 0 ? timeLeft / levelTime : 1;
   const progressRatio = totalBots > 0 ? satisfiedCount / totalBots : 0;
   const anxiety       = timerActive ? Math.max(0, (1 - timeRatio) * (1 - progressRatio)) : 0;
   const hope          = progressRatio;
@@ -108,9 +106,11 @@ export default function App() {
           </div>
         )}
 
-        {screen === 'game' && gameState === GAME_STATE.LEVEL_WIN  && <WinOverlay  onLevelSelect={() => setScreen('select')}/>}
+        {/* Overlays — RechargeOverlay takes priority over GameOver since timer rescue shows before game over */}
+        {screen === 'game' && gameState === GAME_STATE.LEVEL_WIN  && <WinOverlay onLevelSelect={() => setScreen('select')}/>}
         {screen === 'game' && gameState === GAME_STATE.GAME_OVER  && <GameOverOverlay onLevelSelect={() => setScreen('select')}/>}
         {screen === 'game' && <MathChallengeOverlay />}
+        {screen === 'game' && <RechargeOverlay />}
       </div>
     </ErrorBoundary>
   );
