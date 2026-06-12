@@ -125,13 +125,12 @@ export const useGameStore = create((set, get) => ({
 
   loadLevel(index) {
     clearTimer();
-    const { unlockedLevels, levelStars, powerCharges } = get();
+    const { unlockedLevels, levelStars } = get();
     set({
       currentLevelIndex: index,
       unlockedLevels,
       levelStars,
       ...initLevel(LEVELS[index], index),
-      powerCharges,
     });
   },
 
@@ -213,9 +212,12 @@ export const useGameStore = create((set, get) => ({
       set({
         rechargeType: RECHARGE_TYPE.NONE,
         rechargeProgress: 0,
+        rechargeNeeded: 0,
         rechargeMathQuestion: null,
         rechargeMathShake: false,
-        powerCharges: MAX_POWER_CHARGES,
+        powerCharges: 3,
+        powerState: POWER_STATE.IDLE,
+        powerConduitId: null,
       });
     } else if (s.rechargeType === RECHARGE_TYPE.UNDO) {
       set({
@@ -459,15 +461,15 @@ export const useGameStore = create((set, get) => ({
 
   restart() {
     clearTimer();
-    const { currentLevelIndex, unlockedLevels, levelStars, powerCharges } = get();
-    set({ ...initLevel(LEVELS[currentLevelIndex], currentLevelIndex), unlockedLevels, levelStars, currentLevelIndex, powerCharges });
+    const { currentLevelIndex, unlockedLevels, levelStars } = get();
+    set({ ...initLevel(LEVELS[currentLevelIndex], currentLevelIndex), unlockedLevels, levelStars, currentLevelIndex });
   },
 
   nextLevel() {
     clearTimer();
-    const { currentLevelIndex, unlockedLevels, levelStars, powerCharges } = get();
+    const { currentLevelIndex, unlockedLevels, levelStars } = get();
     const next = currentLevelIndex + 1;
     if (next >= LEVELS.length) return;
-    set({ ...initLevel(LEVELS[next], next), currentLevelIndex: next, unlockedLevels, levelStars, powerCharges });
+    set({ ...initLevel(LEVELS[next], next), currentLevelIndex: next, unlockedLevels, levelStars });
   },
 }));
