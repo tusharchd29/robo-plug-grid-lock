@@ -29,10 +29,7 @@ export const RECHARGE_TYPE = {
 };
 
 function getLevelTime(index) {
-  if (index < 8)  return 10;
-  if (index < 15) return 12;
-  if (index < 20) return 15;
-  return 13;
+  return 25;
 }
 
 const MAX_POWER_CHARGES = 3;
