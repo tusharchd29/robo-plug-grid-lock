@@ -13,21 +13,29 @@ export const GAME_STATE = {
   GAME_OVER: 'GAME_OVER',
 };
 
-// Power-up states
 export const POWER_STATE = {
-  IDLE: 'IDLE',            // nothing happening
-  PENDING_SELECT: 'PENDING_SELECT',  // user clicked ⚡ button, waiting to pick a conduit
-  MATH_CHALLENGE: 'MATH_CHALLENGE',  // math popup shown
-  GHOST_ARMED: 'GHOST_ARMED',        // conduit selected, ghost move ready
+  IDLE: 'IDLE',
+  PENDING_SELECT: 'PENDING_SELECT',
+  MATH_CHALLENGE: 'MATH_CHALLENGE',
+  GHOST_ARMED: 'GHOST_ARMED',
 };
 
-const LEVEL_TIME = 15;
-const MAX_POWER_CHARGES = 3;
+// Timer: 10s for L1-8, 12s for L9-15, 15s for L16-20, 13s for L21+
+function getLevelTime(index) {
+  if (index < 8)  return 10;
+  if (index < 15) return 12;
+  if (index < 20) return 15;
+  return 13;
+}
 
-function initLevel(levelDef) {
+const MAX_POWER_CHARGES = 3;
+const MAX_UNDOS = 3; // limited undos per level
+
+function initLevel(levelDef, index) {
   const conduits  = levelDef.conduits.map(c => ({ ...c }));
   const deadZones = levelDef.deadZones || [];
   const grid      = buildGrid(levelDef.cols, levelDef.rows, conduits, deadZones);
+  const LEVEL_TIME = getLevelTime(index);
   return {
     levelDef,
     cols: levelDef.cols,
@@ -48,13 +56,14 @@ function initLevel(levelDef) {
     stars: 0,
     history: [],
     timeLeft: LEVEL_TIME,
+    levelTime: LEVEL_TIME,
     timerActive: false,
-    // power-up state (preserved across level resets via spread below)
+    undosLeft: MAX_UNDOS,
     powerCharges: MAX_POWER_CHARGES,
     powerState: POWER_STATE.IDLE,
-    powerConduitId: null,   // conduit targeted for ghost move
-    mathQuestion: null,     // { a, op, b, answer }
-    mathShake: false,       // trigger shake on wrong answer
+    powerConduitId: null,
+    mathQuestion: null,
+    mathShake: false,
   };
 }
 
@@ -63,15 +72,24 @@ function clearTimer() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 }
 
+// Harder math: add/subtract up to 50, multiply small numbers
 function generateMathQuestion() {
-  const a = Math.floor(Math.random() * 20) + 1;
-  const b = Math.floor(Math.random() * 20) + 1;
-  const useAdd = Math.random() > 0.5;
-  if (useAdd) {
+  const type = Math.floor(Math.random() * 3);
+  if (type === 0) {
+    // Addition up to 50
+    const a = Math.floor(Math.random() * 40) + 5;
+    const b = Math.floor(Math.random() * 40) + 5;
     return { a, op: '+', b, answer: a + b };
+  } else if (type === 1) {
+    // Subtraction — result always positive
+    const a = Math.floor(Math.random() * 40) + 20;
+    const b = Math.floor(Math.random() * (a - 1)) + 1;
+    return { a, op: '−', b, answer: a - b };
   } else {
-    const big = Math.max(a, b), small = Math.min(a, b);
-    return { a: big, op: '−', b: small, answer: big - small };
+    // Multiplication (2-9 × 2-9)
+    const a = Math.floor(Math.random() * 8) + 2;
+    const b = Math.floor(Math.random() * 8) + 2;
+    return { a, op: '×', b, answer: a * b };
   }
 }
 
@@ -79,7 +97,7 @@ export const useGameStore = create((set, get) => ({
   currentLevelIndex: 0,
   unlockedLevels: 1,
   levelStars: {},
-  ...initLevel(LEVELS[0]),
+  ...initLevel(LEVELS[0], 0),
 
   loadLevel(index) {
     clearTimer();
@@ -88,14 +106,15 @@ export const useGameStore = create((set, get) => ({
       currentLevelIndex: index,
       unlockedLevels,
       levelStars,
-      ...initLevel(LEVELS[index]),
-      powerCharges,  // persist charges across levels
+      ...initLevel(LEVELS[index], index),
+      powerCharges,
     });
   },
 
   startTimer() {
     clearTimer();
-    set({ timerActive: true, timeLeft: LEVEL_TIME });
+    const LEVEL_TIME = getLevelTime(get().currentLevelIndex);
+    set({ timerActive: true, timeLeft: LEVEL_TIME, levelTime: LEVEL_TIME });
     timerInterval = setInterval(() => {
       const { timeLeft, gameState } = get();
       if (gameState === GAME_STATE.LEVEL_WIN || gameState === GAME_STATE.GAME_OVER) {
@@ -115,10 +134,8 @@ export const useGameStore = create((set, get) => ({
     const s = get();
     if (s.gameState !== GAME_STATE.IDLE) return;
 
-    // If power is PENDING_SELECT, clicking a conduit arms it for ghost
     if (s.powerState === POWER_STATE.PENDING_SELECT) {
       if (!id) {
-        // clicked empty space — cancel power mode
         set({ powerState: POWER_STATE.IDLE, selectedConduitId: null });
         return;
       }
@@ -132,29 +149,25 @@ export const useGameStore = create((set, get) => ({
       return;
     }
 
-    if (!s.timerActive && s.timeLeft === LEVEL_TIME) get().startTimer();
+    if (!s.timerActive && s.timeLeft === s.levelTime) get().startTimer();
     set(st => ({ selectedConduitId: st.selectedConduitId === id ? null : id }));
   },
 
-  // ── Power-up: activate pending-select mode ───────────────────────────────
   activatePower() {
     const s = get();
     if (s.powerCharges <= 0) return;
     if (s.gameState !== GAME_STATE.IDLE) return;
     if (s.powerState !== POWER_STATE.IDLE) {
-      // toggle off if already pending
       set({ powerState: POWER_STATE.IDLE, selectedConduitId: null });
       return;
     }
     set({ powerState: POWER_STATE.PENDING_SELECT, selectedConduitId: null });
   },
 
-  // ── Math answer submitted ────────────────────────────────────────────────
   submitMathAnswer(userAnswer) {
     const s = get();
     if (s.powerState !== POWER_STATE.MATH_CHALLENGE) return;
     if (parseInt(userAnswer, 10) === s.mathQuestion.answer) {
-      // Correct — arm the ghost move
       set({
         powerState: POWER_STATE.GHOST_ARMED,
         powerCharges: s.powerCharges - 1,
@@ -162,7 +175,6 @@ export const useGameStore = create((set, get) => ({
         mathShake: false,
       });
     } else {
-      // Wrong — shake and give new question
       set({ mathShake: true, mathQuestion: generateMathQuestion() });
       setTimeout(() => set({ mathShake: false }), 500);
     }
@@ -182,7 +194,7 @@ export const useGameStore = create((set, get) => ({
     const s = get();
     if (s.gameState !== GAME_STATE.IDLE) return;
 
-    if (!s.timerActive && s.timeLeft === LEVEL_TIME) get().startTimer();
+    if (!s.timerActive && s.timeLeft === s.levelTime) get().startTimer();
 
     const conduit = s.conduits.find(c => c.id === conduitId);
     if (!conduit) return;
@@ -213,6 +225,7 @@ export const useGameStore = create((set, get) => ({
       exits:          s.exits.map(e => ({ ...e })),
       movesUsed:      s.movesUsed,
       satisfiedCount: s.satisfiedCount,
+      undosLeft:      s.undosLeft,
     };
 
     set({ gameState: GAME_STATE.MOVING, selectedConduitId: conduitId });
@@ -286,12 +299,15 @@ export const useGameStore = create((set, get) => ({
   },
 
   undo() {
-    const { history, gameState } = get();
+    const { history, gameState, undosLeft, movesUsed } = get();
     if (gameState !== GAME_STATE.IDLE && gameState !== GAME_STATE.GAME_OVER) return;
     if (!history.length) return;
+    if (undosLeft <= 0) return; // no undos left
     const prev = history[history.length - 1];
     set({
       ...prev,
+      movesUsed: movesUsed + 1, // undo costs 1 move
+      undosLeft: undosLeft - 1,
       history: history.slice(0, -1),
       gameState: GAME_STATE.IDLE,
       selectedConduitId: null,
@@ -305,7 +321,7 @@ export const useGameStore = create((set, get) => ({
   restart() {
     clearTimer();
     const { currentLevelIndex, unlockedLevels, levelStars, powerCharges } = get();
-    set({ ...initLevel(LEVELS[currentLevelIndex]), unlockedLevels, levelStars, currentLevelIndex, powerCharges });
+    set({ ...initLevel(LEVELS[currentLevelIndex], currentLevelIndex), unlockedLevels, levelStars, currentLevelIndex, powerCharges });
   },
 
   nextLevel() {
@@ -313,6 +329,6 @@ export const useGameStore = create((set, get) => ({
     const { currentLevelIndex, unlockedLevels, levelStars, powerCharges } = get();
     const next = currentLevelIndex + 1;
     if (next >= LEVELS.length) return;
-    set({ ...initLevel(LEVELS[next]), currentLevelIndex: next, unlockedLevels, levelStars, powerCharges });
+    set({ ...initLevel(LEVELS[next], next), currentLevelIndex: next, unlockedLevels, levelStars, powerCharges });
   },
 }));
