@@ -74,6 +74,17 @@
 }
 .card.locked { opacity: 0.3; cursor: not-allowed; }
 
+/* Expert card — red-tinted glow */
+.expertCard:not(.locked) {
+  border-color: rgba(239,68,68,0.4);
+  background: rgba(80,10,10,0.2);
+}
+.expertCard:not(.locked):hover {
+  border-color: rgba(239,68,68,0.7);
+  background: rgba(100,10,10,0.3);
+  box-shadow: 0 0 10px rgba(239,68,68,0.3);
+}
+
 .yarnDot {
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -102,13 +113,14 @@
   display: flex; align-items: center; justify-content: center;
   background: rgba(10,8,24,0.4);
   border-radius: 14px;
-  font-size: 16px;
-  opacity: 0.7;
+  font-size: 14px;
+  opacity: 0.8;
 }
 
 .easy {}
 .medium {}
 .hard {}
+.expert {}
 
 .footer {
   font-family: 'Nunito', sans-serif;
