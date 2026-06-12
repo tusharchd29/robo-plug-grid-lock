@@ -235,3 +235,31 @@
   to   { transform: translate(-50%, -50%) scale(1.15); }
 }
 .arrowsGhost .arrow { color: #fbbf24 !important; filter: drop-shadow(0 0 4px #fbbf24); }
+
+/* ─── Recharge overlay ───────────────────────────────────────────── */
+.rechargeEmoji {
+  font-size: 44px;
+  line-height: 1;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 0 12px var(--recharge-color, #f97316));
+}
+
+.progressDots {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 4px;
+  justify-content: center;
+}
+
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.2);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.dotDone {
+  border-color: transparent;
+}
