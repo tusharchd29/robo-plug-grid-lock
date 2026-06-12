@@ -5,12 +5,16 @@ import styles from './HUD.module.css';
 export default function HUD() {
   const {
     movesUsed, targetMoves, satisfiedCount, totalBots,
-    timeLeft, undo, restart,
+    timeLeft, levelTime, undo, restart, undosLeft,
     powerCharges, powerState, activatePower,
   } = useGameStore();
 
   const stars = movesUsed === 0 ? 0 : movesUsed <= targetMoves ? 3 : movesUsed <= targetMoves + 3 ? 2 : 1;
   const isPowerPending = powerState === POWER_STATE.PENDING_SELECT || powerState === POWER_STATE.GHOST_ARMED;
+
+  // Timer turns red in last 3 seconds
+  const timeFrac   = levelTime > 0 ? timeLeft / levelTime : 1;
+  const timerDanger = timeLeft <= 3 && timeLeft > 0;
 
   return (
     <div className={styles.bar}>
@@ -39,6 +43,15 @@ export default function HUD() {
         ))}
       </div>
 
+      <div className={styles.div}/>
+
+      {/* Timer — red pulse when danger */}
+      <div className={`${styles.stat} ${timerDanger ? styles.timerDanger : ''}`}>
+        <span className={styles.icon}>⏱</span>
+        <span className={`${styles.val} ${timerDanger ? styles.warn : ''}`}>{Math.ceil(timeLeft)}</span>
+        <span className={styles.lbl}>sec</span>
+      </div>
+
       {/* Spacer */}
       <div style={{ flex: 1 }}/>
 
@@ -56,8 +69,15 @@ export default function HUD() {
         </span>
       </button>
 
-      {/* Buttons */}
-      <button className={styles.btn} onClick={undo}>↩</button>
+      {/* Undo — shows remaining count */}
+      <button
+        className={`${styles.btn} ${undosLeft === 0 ? styles.btnDepleted : ''}`}
+        onClick={undo}
+        disabled={undosLeft === 0}
+        title={`Undo (${undosLeft} left, costs 1 move)`}
+      >
+        ↩<span className={styles.undoCount}>{undosLeft}</span>
+      </button>
       <button className={styles.btn} onClick={restart}>↺</button>
     </div>
   );
